@@ -1572,13 +1572,225 @@
         }
 
         /* ============================================================ */
-        /*  ПРОФИЛЬ (с настройками)                                     */
+        /*  ПРОФИЛЬ — БАННЕР, КОМИССИЯ, ПОПОЛНЕНИЕ                      */
         /* ============================================================ */
         .profile-card {
             max-width: 400px;
             margin: 0 auto;
             text-align: center;
         }
+
+        /* --- Баннер канала --- */
+        .profile-banner {
+            display: block;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 18px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            text-decoration: none;
+            color: #fff;
+            transition: 0.2s;
+            cursor: pointer;
+            text-align: left;
+        }
+        .profile-banner:hover {
+            transform: scale(1.01);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+        .banner-content {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .banner-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+        .banner-text {
+            flex: 1;
+        }
+        .banner-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .banner-desc {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        .banner-arrow {
+            font-size: 24px;
+            opacity: 0.7;
+        }
+
+        /* --- Комиссия --- */
+        .profile-commission {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border-left: 4px solid #f59e0b;
+            text-align: left;
+        }
+        body.dark .profile-commission {
+            background: #1e1e32;
+        }
+        .commission-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+        .commission-text {
+            flex: 1;
+        }
+        .commission-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        body.dark .commission-title {
+            color: #e2e8f0;
+        }
+        .commission-desc {
+            font-size: 13px;
+            color: #64748b;
+        }
+        body.dark .commission-desc {
+            color: #94a3b8;
+        }
+        .commission-example {
+            font-size: 13px;
+            color: #3b82f6;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+        body.dark .commission-example {
+            color: #60a5fa;
+        }
+
+        /* --- Пополнение --- */
+        .profile-deposit {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border-left: 4px solid #16a34a;
+            text-align: left;
+        }
+        body.dark .profile-deposit {
+            background: #1e1e32;
+        }
+        .deposit-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+        .deposit-text {
+            flex: 1;
+        }
+        .deposit-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        body.dark .deposit-title {
+            color: #e2e8f0;
+        }
+        .deposit-desc {
+            font-size: 13px;
+            color: #64748b;
+        }
+        body.dark .deposit-desc {
+            color: #94a3b8;
+        }
+        .deposit-desc strong {
+            color: #3b82f6;
+        }
+        body.dark .deposit-desc strong {
+            color: #60a5fa;
+        }
+
+        /* --- Инструкция --- */
+        .profile-instruction {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 18px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border: 2px solid #e2e8f0;
+            text-align: left;
+        }
+        body.dark .profile-instruction {
+            background: #1e1e32;
+            border-color: #2d2d44;
+        }
+        .instruction-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1e293b;
+        }
+        body.dark .instruction-title {
+            color: #e2e8f0;
+        }
+        .instruction-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #1e293b;
+        }
+        body.dark .step {
+            color: #e2e8f0;
+        }
+        .step-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #3b82f6;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .step-text strong {
+            color: #3b82f6;
+        }
+        body.dark .step-text strong {
+            color: #60a5fa;
+        }
+        .instruction-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #fff;
+            border: none;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .instruction-btn:hover {
+            opacity: 0.92;
+            transform: scale(1.01);
+        }
+
+        /* --- Остальное --- */
         .profile-avatar {
             width: 80px;
             height: 80px;
@@ -1635,6 +1847,7 @@
             transition: 0.15s;
             flex-wrap: wrap;
             gap: 8px;
+            text-align: left;
         }
         body.dark .profile-item {
             background: #1e1e32;
@@ -1846,6 +2059,21 @@
                 padding: 4px 10px;
                 font-size: 12px;
             }
+            .banner-content {
+                flex-wrap: wrap;
+            }
+            .banner-arrow {
+                display: none;
+            }
+            .profile-commission {
+                flex-wrap: wrap;
+            }
+            .profile-deposit {
+                flex-wrap: wrap;
+            }
+            .step {
+                font-size: 13px;
+            }
         }
     </style>
 </head>
@@ -1930,7 +2158,6 @@
                 <div class="admin-section">
                     <h3 style="margin-bottom:16px;">⚙️ Админ-панель</h3>
 
-                    <!-- Добавление игры -->
                     <div class="admin-card">
                         <h4>➕ Добавить игру или приложение</h4>
                         <input class="admin-input" id="adminGameName" placeholder="Название игры/приложения" />
@@ -1948,7 +2175,6 @@
                         <button class="admin-btn" id="adminAddGameBtn">Добавить</button>
                     </div>
 
-                    <!-- Добавление товара для игры -->
                     <div class="admin-card">
                         <h4>📦 Добавить товар для игры</h4>
                         <select class="admin-input" id="adminGameSelect"></select>
@@ -1956,7 +2182,6 @@
                         <button class="admin-btn" id="adminAddItemBtn">Добавить товар</button>
                     </div>
 
-                    <!-- Управление популярными товарами -->
                     <div class="admin-card" style="border-left-color:#10b981;">
                         <h4>🔥 Управление популярными товарами</h4>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
@@ -1971,19 +2196,16 @@
                         <div id="adminGoodsList"></div>
                     </div>
 
-                    <!-- Модерация товаров -->
                     <div class="admin-card" style="border-left-color:#f59e0b;">
                         <h4>🛂 Модерация товаров</h4>
                         <div id="moderationList"></div>
                     </div>
 
-                    <!-- Заявки на вывод -->
                     <div class="admin-card" style="border-left-color:#8b5cf6;">
                         <h4>💳 Заявки на вывод</h4>
                         <div id="withdrawRequestsList"></div>
                     </div>
 
-                    <!-- Промокоды -->
                     <div class="admin-card" style="border-left-color:#16a34a;">
                         <h4>🎫 Промокоды</h4>
                         <div class="admin-row">
@@ -2005,7 +2227,6 @@
                         <div style="margin-top:12px;" id="promoList"></div>
                     </div>
 
-                    <!-- Управление пользователями -->
                     <div class="admin-card" style="border-left-color:#3b82f6;">
                         <h4>👥 Пользователи</h4>
                         <input class="search-input" id="userSearchInput" placeholder="🔍 Поиск пользователей..." />
@@ -2026,7 +2247,7 @@
             <div class="page" id="pageFinance">
                 <div class="balance-box">
                     <div style="font-size:14px;opacity:0.9;">Ваш баланс</div>
-                    <div class="stars" id="balanceDisplay">⭐ 120</div>
+                    <div class="stars" id="balanceDisplay">⭐ 0</div>
                 </div>
 
                 <div class="withdraw-section">
@@ -2055,9 +2276,68 @@
                 <div id="historyList"></div>
             </div>
 
-            <!-- ===== ПРОФИЛЬ (с настройками) ===== -->
+            <!-- ===== ПРОФИЛЬ ===== -->
             <div class="page" id="pageProfile">
                 <div class="profile-card">
+
+                    <!-- БАННЕР КАНАЛА -->
+                    <a href="https://t.me/rubishopgame" target="_blank" class="profile-banner">
+                        <div class="banner-content">
+                            <div class="banner-icon">📢</div>
+                            <div class="banner-text">
+                                <div class="banner-title">Rubi Shop — наш канал</div>
+                                <div class="banner-desc">Промокоды, новости, акции и розыгрыши!</div>
+                            </div>
+                            <div class="banner-arrow">→</div>
+                        </div>
+                    </a>
+
+                    <!-- КОМИССИЯ -->
+                    <div class="profile-commission">
+                        <div class="commission-icon">💸</div>
+                        <div class="commission-text">
+                            <div class="commission-title">Комиссия платформы</div>
+                            <div class="commission-desc">При продаже товара мы забираем <strong>10%</strong> от суммы</div>
+                            <div class="commission-example">Пример: выставили товар за <strong>100 ⭐</strong> → получите <strong>90 ⭐</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- ПОПОЛНЕНИЕ БАЛАНСА -->
+                    <div class="profile-deposit">
+                        <div class="deposit-icon">💰</div>
+                        <div class="deposit-text">
+                            <div class="deposit-title">Пополнить баланс</div>
+                            <div class="deposit-desc">Отправьте Telegram Stars на <strong>@vmvmvq</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- ИНСТРУКЦИЯ ПО ПОПОЛНЕНИЮ -->
+                    <div class="profile-instruction">
+                        <div class="instruction-title">📖 Как пополнить баланс:</div>
+                        <div class="instruction-steps">
+                            <div class="step">
+                                <span class="step-num">1</span>
+                                <span class="step-text">Нажмите <strong>«Написать»</strong> и перейдите в ЛС к <strong>@vmvmvq</strong></span>
+                            </div>
+                            <div class="step">
+                                <span class="step-num">2</span>
+                                <span class="step-text">Отправьте <strong>подарок</strong> (Telegram Stars) на нужную сумму</span>
+                            </div>
+                            <div class="step">
+                                <span class="step-num">3</span>
+                                <span class="step-text">Напишите свой <strong>никнейм</strong> из Rubi в сообщении</span>
+                            </div>
+                            <div class="step">
+                                <span class="step-num">4</span>
+                                <span class="step-text">Дождитесь пополнения — баланс придёт автоматически!</span>
+                            </div>
+                        </div>
+                        <button class="instruction-btn" onclick="window.open('https://t.me/vmvmvq', '_blank')">
+                            ✉️ Написать @vmvmvq
+                        </button>
+                    </div>
+
+                    <!-- СТАРЫЕ НАСТРОЙКИ -->
                     <div class="profile-avatar" id="profileAvatar">R</div>
                     <div class="profile-name-wrap">
                         <span class="profile-name" id="profileName">Rubi</span>
@@ -2346,7 +2626,6 @@
 
         document.getElementById('logoutBtn').addEventListener('click', function() {
             if (confirm('Выйти из аккаунта?')) {
-                // Сохраняем состояние пользователя перед выходом
                 saveAllData();
                 currentUser = null;
                 document.getElementById('appWrapper').style.display = 'none';
@@ -3487,7 +3766,7 @@
             currentChatWith = chatKey;
             const isSystem = chat.isSystem || false;
             const otherUser = isSystem ? 'Rubi Тех.поддержка' : (chat.users.find(u => u !== currentUser.username) ||
-            'Неизвестно');
+                'Неизвестно');
 
             document.getElementById('chatWithUser').textContent = (isSystem ? '⚠️ ' : '💬 ') + otherUser;
             document.getElementById('chatStatus').textContent = '● онлайн';
@@ -3620,7 +3899,6 @@
                 return;
             }
 
-            // Проверка юзернейма на допустимые символы
             if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
                 settingsMsg.textContent = '❌ Юзернейм может содержать только буквы, цифры и подчёркивание!';
                 settingsMsg.style.color = '#dc2626';
@@ -3636,7 +3914,6 @@
                     return;
                 }
 
-                // Обновляем юзернейм во всех чатах
                 for (const key in chats) {
                     const chat = chats[key];
                     if (chat.users) {
@@ -3652,7 +3929,6 @@
                     }
                 }
 
-                // Обновляем в товарах
                 approvedGoods.forEach(g => {
                     if (g.seller === oldUsername) g.seller = newUsername;
                 });
@@ -3663,7 +3939,6 @@
                     if (r.user === oldUsername) r.user = newUsername;
                 });
 
-                // Обновляем чаты пользователей
                 users.forEach(u => {
                     if (u.chats) {
                         u.chats = u.chats.map(c => {
@@ -3675,7 +3950,6 @@
                     }
                 });
 
-                // Обновляем ключи чатов
                 const newChats = {};
                 for (const key in chats) {
                     if (key.includes(oldUsername)) {
@@ -3698,10 +3972,8 @@
                 }
             }
 
-            // Обновляем отображаемое имя
             currentUser.displayName = newName;
 
-            // Обновляем в users
             const user = users.find(u => u.id === currentUser.id);
             if (user) {
                 user.username = currentUser.username;
@@ -3899,6 +4171,7 @@
         console.log('⚙️ Настройки профиля: можно сменить имя и юзернейм');
         console.log('💰 При регистрации баланс 0 ⭐');
         console.log('💾 При выходе баланс сохраняется');
+        console.log('📢 Подписывайтесь на канал: t.me/rubishopgame');
     </script>
 </body>
-</html>
+                                                           </html>
