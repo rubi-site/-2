@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Rubi</title>
+
+    <!-- Подключаем Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         /* ============================================================ */
         /*  ГЛОБАЛЬНЫЕ СБРОСЫ                                            */
@@ -1438,7 +1442,7 @@
         }
 
         /* ============================================================ */
-        /*  ФИНАНСЫ — вывод звёзд                                       */
+        /*  ФИНАНСЫ                                                     */
         /* ============================================================ */
         .balance-box {
             background: linear-gradient(145deg, #3b82f6, #2563eb);
@@ -2453,13 +2457,32 @@
 
     <script>
         // ============================================================
+        //  ПОДКЛЮЧЕНИЕ К SUPABASE (ВАШИ ДАННЫЕ)
+        // ============================================================
+        const SUPABASE_URL = 'https://kiesefkealbagydlizld.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpZXNlZmtlYWxiYWd5ZGxpemxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDE2MDIsImV4cCI6MjEwMjkxNzYwMn0.CfngCjg_Ek8PWLxXtwQCqK7sjPsTA849npapg1Lba64';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ============================================================
         //  ПЕРЕМЕННЫЕ
         // ============================================================
         let currentUser = null;
         let users = [];
+        let gamesData = [];
+        let approvedGoods = [];
+        let moderationQueue = [];
+        let promoCodes = [];
+        let chats = {};
+        let withdrawRequests = [];
         let isLoginMode = true;
         let selectedReviewStars = 0;
         let pendingReviewData = null;
+        let idCounter = 100;
+        let selectedColor = '#3b82f6';
+        let pendingPurchase = null;
+        let activeGameId = null;
+        let currentChatWith = null;
 
         // ============================================================
         //  ФУНКЦИЯ ДЛЯ ВЫБОРА ЗВЁЗД В ОТЗЫВЕ
@@ -2483,45 +2506,223 @@
         //  СИСТЕМА АВТОРИЗАЦИИ
         // ============================================================
         function loadUsers() {
-            const saved = localStorage.getItem('rubi_users');
-            if (saved) {
-                try { users = JSON.parse(saved); } catch (e) { users = []; }
-            }
-            if (!users.find(u => u.username === 'admin')) {
-                users.push({
-                    id: 1,
-                    username: 'admin',
-                    displayName: 'Admin',
-                    password: 'admin123',
-                    balance: 9999,
-                    isAdmin: true,
-                    history: [],
-                    chats: [],
-                    tg: 'admin_tg'
-                });
-            }
-            if (!users.find(u => u.username === 'user')) {
-                users.push({
-                    id: 2,
-                    username: 'user',
-                    displayName: 'User',
-                    password: 'user123',
-                    balance: 0,
-                    isAdmin: false,
-                    history: [],
-                    chats: [],
-                    tg: 'user_tg'
-                });
-            }
-            saveUsers();
+            // Пользователи уже загружаются из Supabase в loadAllData
         }
 
         function saveUsers() {
-            localStorage.setItem('rubi_users', JSON.stringify(users));
+            // Сохраняется через Supabase
         }
 
         function getNextUserId() {
-            return users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
+            return users.length > 0 ? Math.max(...users.map(u => u.id || 0)) + 1 : 1;
+        }
+
+        // ============================================================
+        //  ЗАГРУЗКА ДАННЫХ ИЗ SUPABASE
+        // ============================================================
+        async function loadAllData() {
+            try {
+                // Загружаем пользователей
+                const { data: usersData, error: usersError } = await supabase
+                    .from('users')
+                    .select('*');
+                if (!usersError && usersData) {
+                    users = usersData;
+                    console.log('✅ Загружено пользователей:', users.length);
+                } else if (usersError) {
+                    console.error('Ошибка загрузки пользователей:', usersError);
+                }
+
+                // Загружаем игры
+                const { data: gamesDataRaw, error: gamesError } = await supabase
+                    .from('games')
+                    .select('*');
+                if (!gamesError && gamesDataRaw) {
+                    gamesData = gamesDataRaw;
+                    console.log('✅ Загружено игр:', gamesData.length);
+                } else if (gamesError) {
+                    console.error('Ошибка загрузки игр:', gamesError);
+                }
+
+                // Загружаем товары игр
+                const { data: itemsData, error: itemsError } = await supabase
+                    .from('game_items')
+                    .select('*');
+                if (!itemsError && itemsData) {
+                    // Группируем товары по играм
+                    gamesData.forEach(game => {
+                        game.items = itemsData.filter(item => item.game_id === game.id).map(item => item.item_name);
+                    });
+                    console.log('✅ Загружено товаров игр:', itemsData.length);
+                } else if (itemsError) {
+                    console.error('Ошибка загрузки товаров игр:', itemsError);
+                }
+
+                // Загружаем популярные товары
+                const { data: approvedData, error: approvedError } = await supabase
+                    .from('approved_goods')
+                    .select('*');
+                if (!approvedError && approvedData) {
+                    approvedGoods = approvedData;
+                    console.log('✅ Загружено популярных товаров:', approvedGoods.length);
+                } else if (approvedError) {
+                    console.error('Ошибка загрузки популярных товаров:', approvedError);
+                }
+
+                // Загружаем модерацию
+                const { data: modData, error: modError } = await supabase
+                    .from('moderation_queue')
+                    .select('*');
+                if (!modError && modData) {
+                    moderationQueue = modData;
+                    console.log('✅ Загружено товаров на модерации:', moderationQueue.length);
+                } else if (modError) {
+                    console.error('Ошибка загрузки модерации:', modError);
+                }
+
+                // Загружаем промокоды
+                const { data: promoData, error: promoError } = await supabase
+                    .from('promo_codes')
+                    .select('*');
+                if (!promoError && promoData) {
+                    promoCodes = promoData;
+                    console.log('✅ Загружено промокодов:', promoCodes.length);
+                } else if (promoError) {
+                    console.error('Ошибка загрузки промокодов:', promoError);
+                }
+
+                // Загружаем заявки на вывод
+                const { data: withdrawData, error: withdrawError } = await supabase
+                    .from('withdraw_requests')
+                    .select('*');
+                if (!withdrawError && withdrawData) {
+                    withdrawRequests = withdrawData;
+                    console.log('✅ Загружено заявок на вывод:', withdrawRequests.length);
+                } else if (withdrawError) {
+                    console.error('Ошибка загрузки заявок на вывод:', withdrawError);
+                }
+
+                // Загружаем чаты
+                const { data: chatsData, error: chatsError } = await supabase
+                    .from('chats')
+                    .select('*');
+                if (!chatsError && chatsData) {
+                    chats = {};
+                    chatsData.forEach(chat => {
+                        chats[chat.id] = chat;
+                    });
+                    console.log('✅ Загружено чатов:', Object.keys(chats).length);
+                } else if (chatsError) {
+                    console.error('Ошибка загрузки чатов:', chatsError);
+                }
+
+                return true;
+
+            } catch (e) {
+                console.error('❌ Ошибка загрузки данных:', e);
+                loadFromLocalStorage();
+                return false;
+            }
+        }
+
+        // ============================================================
+        //  СОХРАНЕНИЕ ДАННЫХ В SUPABASE
+        // ============================================================
+        async function saveAllData() {
+            try {
+                // Сохраняем пользователей
+                for (const user of users) {
+                    const { error } = await supabase
+                        .from('users')
+                        .upsert(user, { onConflict: 'id' });
+                    if (error) console.error('Ошибка сохранения пользователя:', error);
+                }
+
+                // Сохраняем популярные товары
+                for (const item of approvedGoods) {
+                    if (item.id) {
+                        const { error } = await supabase
+                            .from('approved_goods')
+                            .upsert(item, { onConflict: 'id' });
+                        if (error) console.error('Ошибка сохранения товара:', error);
+                    }
+                }
+
+                // Сохраняем чаты
+                for (const [id, chat] of Object.entries(chats)) {
+                    const { error } = await supabase
+                        .from('chats')
+                        .upsert({ id, ...chat }, { onConflict: 'id' });
+                    if (error) console.error('Ошибка сохранения чата:', error);
+                }
+
+                // Сохраняем заявки на вывод
+                for (const req of withdrawRequests) {
+                    if (req.id) {
+                        const { error } = await supabase
+                            .from('withdraw_requests')
+                            .upsert(req, { onConflict: 'id' });
+                        if (error) console.error('Ошибка сохранения заявки:', error);
+                    }
+                }
+
+                // Сохраняем промокоды
+                for (const promo of promoCodes) {
+                    if (promo.id) {
+                        const { error } = await supabase
+                            .from('promo_codes')
+                            .upsert(promo, { onConflict: 'id' });
+                        if (error) console.error('Ошибка сохранения промокода:', error);
+                    }
+                }
+
+                console.log('✅ Все данные сохранены в Supabase!');
+                return true;
+
+            } catch (e) {
+                console.error('❌ Ошибка сохранения данных:', e);
+                saveToLocalStorage();
+                return false;
+            }
+        }
+
+        // ============================================================
+        //  ЗАГРУЗКА ИЗ LOCALSTORAGE (ЗАПАСНОЙ ВАРИАНТ)
+        // ============================================================
+        function loadFromLocalStorage() {
+            const savedUsers = localStorage.getItem('rubi_users');
+            if (savedUsers) users = JSON.parse(savedUsers);
+
+            const savedGames = localStorage.getItem('rubi_games');
+            if (savedGames) gamesData = JSON.parse(savedGames);
+
+            const savedApproved = localStorage.getItem('rubi_approved');
+            if (savedApproved) approvedGoods = JSON.parse(savedApproved);
+
+            const savedModeration = localStorage.getItem('rubi_moderation');
+            if (savedModeration) moderationQueue = JSON.parse(savedModeration);
+
+            const savedPromos = localStorage.getItem('rubi_promos');
+            if (savedPromos) promoCodes = JSON.parse(savedPromos);
+
+            const savedChats = localStorage.getItem('rubi_chats');
+            if (savedChats) chats = JSON.parse(savedChats);
+
+            const savedWithdraw = localStorage.getItem('rubi_withdraw');
+            if (savedWithdraw) withdrawRequests = JSON.parse(savedWithdraw);
+
+            console.log('📦 Данные загружены из localStorage (запасной вариант)');
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('rubi_users', JSON.stringify(users));
+            localStorage.setItem('rubi_games', JSON.stringify(gamesData));
+            localStorage.setItem('rubi_approved', JSON.stringify(approvedGoods));
+            localStorage.setItem('rubi_moderation', JSON.stringify(moderationQueue));
+            localStorage.setItem('rubi_promos', JSON.stringify(promoCodes));
+            localStorage.setItem('rubi_chats', JSON.stringify(chats));
+            localStorage.setItem('rubi_withdraw', JSON.stringify(withdrawRequests));
+            console.log('💾 Данные сохранены в localStorage (запасной вариант)');
         }
 
         // ============================================================
@@ -2543,7 +2744,7 @@
             authError.style.display = 'none';
         }
 
-        function handleAuth() {
+        async function handleAuth() {
             const username = authLogin.value.trim().toLowerCase();
             const password = authPassword.value.trim();
 
@@ -2569,16 +2770,14 @@
                 const newUser = {
                     id: getNextUserId(),
                     username: username,
-                    displayName: username,
+                    display_name: username,
                     password: password,
                     balance: 0,
-                    isAdmin: false,
-                    history: [],
-                    chats: [],
+                    is_admin: false,
                     tg: ''
                 };
                 users.push(newUser);
-                saveUsers();
+                await saveAllData();
                 currentUser = newUser;
                 hideAuthError();
                 enterApp();
@@ -2590,13 +2789,12 @@
             document.getElementById('appWrapper').style.display = 'flex';
             updateProfileUI();
 
-            if (currentUser.isAdmin) {
+            if (currentUser.is_admin) {
                 document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
             } else {
                 document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
             }
 
-            loadAllData();
             initSystemChat();
             renderAll();
             updateUI();
@@ -2604,10 +2802,10 @@
 
         function updateProfileUI() {
             if (!currentUser) return;
-            document.getElementById('userBadge').textContent = '👤 ' + (currentUser.displayName || currentUser.username);
-            document.getElementById('profileName').textContent = currentUser.displayName || currentUser.username;
+            document.getElementById('userBadge').textContent = '👤 ' + (currentUser.display_name || currentUser.username);
+            document.getElementById('profileName').textContent = currentUser.display_name || currentUser.username;
             document.getElementById('profileUsername').textContent = '@' + currentUser.username;
-            document.getElementById('profileAvatar').textContent = (currentUser.displayName || currentUser.username).charAt(0)
+            document.getElementById('profileAvatar').textContent = (currentUser.display_name || currentUser.username).charAt(0)
                 .toUpperCase();
         }
 
@@ -2624,9 +2822,9 @@
             hideAuthError();
         });
 
-        document.getElementById('logoutBtn').addEventListener('click', function() {
+        document.getElementById('logoutBtn').addEventListener('click', async function() {
             if (confirm('Выйти из аккаунта?')) {
-                saveAllData();
+                await saveAllData();
                 currentUser = null;
                 document.getElementById('appWrapper').style.display = 'none';
                 authOverlay.classList.add('active');
@@ -2641,129 +2839,29 @@
         });
 
         // ============================================================
-        //  ДАННЫЕ
-        // ============================================================
-        let gamesData = [{
-            id: 'cs2',
-            name: 'CS2',
-            color: '#3b82f6',
-            items: ['AK-47 Redline', 'AWP Dragon Lore', 'Ключ Prime', 'Стикер Team']
-        }, {
-            id: 'dota',
-            name: 'Dota 2',
-            color: '#ef4444',
-            items: ['Arcana Pudge', 'Сет Invoker', 'Курьер', 'Боевой пропуск']
-        }, {
-            id: 'fortnite',
-            name: 'Fortnite',
-            color: '#f59e0b',
-            items: ['Скин Зомби', 'V-баксы 1000', 'V-баксы 5000', 'Танцы']
-        }, {
-            id: 'minecraft',
-            name: 'Minecraft',
-            color: '#10b981',
-            items: ['Алмазная кирка', 'Зелье ночи', 'Скин зомби', 'Незеритовый слиток']
-        }, {
-            id: 'telegram',
-            name: 'Telegram',
-            color: '#3b82f6',
-            items: ['Telegram Premium (месяц)', 'Telegram Premium (год)', 'Telegram Stars 100', 'Telegram Stars 500']
-        }, {
-            id: 'discord',
-            name: 'Discord',
-            color: '#6366f1',
-            items: ['Discord Nitro (месяц)', 'Discord Nitro (год)', 'Буст сервера']
-        }];
-
-        let moderationQueue = [];
-        let approvedGoods = [];
-        let promoCodes = [];
-        let chats = {};
-        let withdrawRequests = [];
-
-        let idCounter = 100;
-        let selectedColor = '#3b82f6';
-        let pendingPurchase = null;
-        let activeGameId = null;
-        let currentChatWith = null;
-
-        // ============================================================
-        //  ЗАГРУЗКА ДАННЫХ
-        // ============================================================
-        function loadAllData() {
-            const savedGames = localStorage.getItem('rubi_games');
-            if (savedGames) { try { gamesData = JSON.parse(savedGames); } catch (e) {} }
-
-            const savedApproved = localStorage.getItem('rubi_approved');
-            if (savedApproved) { try { approvedGoods = JSON.parse(savedApproved); } catch (e) {} }
-
-            const savedModeration = localStorage.getItem('rubi_moderation');
-            if (savedModeration) { try { moderationQueue = JSON.parse(savedModeration); } catch (e) {} }
-
-            const savedPromos = localStorage.getItem('rubi_promos');
-            if (savedPromos) { try { promoCodes = JSON.parse(savedPromos); } catch (e) {} }
-
-            const savedChats = localStorage.getItem('rubi_chats');
-            if (savedChats) { try { chats = JSON.parse(savedChats); } catch (e) {} }
-
-            const savedWithdraw = localStorage.getItem('rubi_withdraw');
-            if (savedWithdraw) { try { withdrawRequests = JSON.parse(savedWithdraw); } catch (e) {} }
-        }
-
-        function saveAllData() {
-            localStorage.setItem('rubi_games', JSON.stringify(gamesData));
-            localStorage.setItem('rubi_approved', JSON.stringify(approvedGoods));
-            localStorage.setItem('rubi_moderation', JSON.stringify(moderationQueue));
-            localStorage.setItem('rubi_promos', JSON.stringify(promoCodes));
-            localStorage.setItem('rubi_chats', JSON.stringify(chats));
-            localStorage.setItem('rubi_withdraw', JSON.stringify(withdrawRequests));
-            saveUsers();
-        }
-
-        // ============================================================
         //  СИСТЕМНЫЙ ЧАТ
         // ============================================================
         function initSystemChat() {
-            const systemChatKey = 'rubi_support';
-            const systemMessage = '⚠️ Вас приветствует техническая поддержка Rubi!\n\nЗдесь вы можете задать любой вопрос по работе платформы.\n\nМы всегда готовы помочь! 🚀';
-
-            if (!chats[systemChatKey]) {
-                chats[systemChatKey] = {
+            // Системный чат уже создан в базе данных
+            // Проверяем, есть ли он в загруженных чатах
+            if (!chats['rubi_support']) {
+                // Создаём локально, если нет в базе
+                chats['rubi_support'] = {
+                    id: 'rubi_support',
                     users: ['Rubi Тех.поддержка', 'system'],
-                    messages: [{
-                        from: 'Rubi Тех.поддержка',
-                        text: systemMessage,
-                        time: new Date().toISOString(),
-                        isSystem: true,
-                        isRead: false
-                    }],
-                    isSystem: true,
-                    readBy: []
+                    messages: [],
+                    is_system: true,
+                    read_by: []
                 };
-            } else {
-                const hasWelcome = chats[systemChatKey].messages.some(m =>
-                    m.isSystem && m.text.includes('техническая поддержка Rubi')
-                );
-                if (!hasWelcome) {
-                    chats[systemChatKey].messages.unshift({
-                        from: 'Rubi Тех.поддержка',
-                        text: systemMessage,
-                        time: new Date().toISOString(),
-                        isSystem: true,
-                        isRead: false
-                    });
-                }
+                saveAllData();
             }
 
-            users.forEach(u => {
-                if (u.username === 'system') return;
-                if (!u.chats) u.chats = [];
-                if (!u.chats.includes(systemChatKey)) {
-                    u.chats.push(systemChatKey);
-                }
-            });
-            saveUsers();
-            saveAllData();
+            // Добавляем системный чат пользователю, если его нет
+            if (currentUser && !currentUser.chats) currentUser.chats = [];
+            if (currentUser && !currentUser.chats.includes('rubi_support')) {
+                currentUser.chats.push('rubi_support');
+                saveAllData();
+            }
         }
 
         // ============================================================
@@ -2778,15 +2876,15 @@
                 const letter = g.name.charAt(0).toUpperCase();
                 const color = g.color || '#3b82f6';
                 const hasDiscount = promoCodes.some(p =>
-                    (p.gameId === g.id || p.gameId === null) &&
+                    (p.game_id === g.id || p.game_id === null) &&
                     p.type === 'percent' &&
-                    p.used < p.limit &&
+                    p.used < p.limit_count &&
                     (p.expires ? new Date(p.expires) > new Date() : true)
                 );
                 card.innerHTML = `
                     <div class="game-avatar" style="background:${color};">${letter}</div>
                     <h4>${g.name}</h4>
-                    <p>${g.items.length} товаров</p>
+                    <p>${g.items ? g.items.length : 0} товаров</p>
                     ${hasDiscount ? '<div class="discount-badge">🔥 Скидка</div>' : ''}
                 `;
                 card.addEventListener('click', () => toggleGameGoods(g.id));
@@ -2817,25 +2915,29 @@
                     </div>
             `;
 
-            game.items.forEach(item => {
-                const price = Math.floor(Math.random() * 40) + 5;
-                const seller = 'Rubi';
-                const desc = 'Отличный товар!';
-                html += `
-                    <div class="goods-item">
-                        <div class="goods-info">
-                            <span class="goods-name">${item}</span>
-                            <span class="goods-desc">${desc}</span>
-                            <span class="goods-seller">👤 ${seller}</span>
+            if (game.items && game.items.length > 0) {
+                game.items.forEach(item => {
+                    const price = Math.floor(Math.random() * 40) + 5;
+                    const seller = 'Rubi';
+                    const desc = 'Отличный товар!';
+                    html += `
+                        <div class="goods-item">
+                            <div class="goods-info">
+                                <span class="goods-name">${item}</span>
+                                <span class="goods-desc">${desc}</span>
+                                <span class="goods-seller">👤 ${seller}</span>
+                            </div>
+                            <div class="goods-actions">
+                                <span class="goods-price">⭐ ${price}</span>
+                                <button class="buy-btn" onclick="openBuyModal('${item}', ${price}, ${price}, '${game.id}', '${seller}')">Купить</button>
+                                ${seller !== currentUser.username ? `<button class="chat-seller-btn" onclick="openChatWithUser('${seller}')">💬 Чат</button>` : ''}
+                            </div>
                         </div>
-                        <div class="goods-actions">
-                            <span class="goods-price">⭐ ${price}</span>
-                            <button class="buy-btn" onclick="openBuyModal('${item}', ${price}, ${price}, '${game.id}', '${seller}')">Купить</button>
-                            ${seller !== currentUser.username ? `<button class="chat-seller-btn" onclick="openChatWithUser('${seller}')">💬 Чат</button>` : ''}
-                        </div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            } else {
+                html += `<div style="padding:20px;text-align:center;color:#94a3b8;">Нет товаров</div>`;
+            }
 
             html += '</div>';
             container.innerHTML = html;
@@ -2854,16 +2956,17 @@
         function renderFeed() {
             const container = document.getElementById('goodsFeed');
             if (approvedGoods.length === 0) {
-                addTestGoods();
+                container.innerHTML =
+                    '<div style="color:#94a3b8;text-align:center;padding:20px;">Нет товаров. Админ добавит скоро!</div>';
                 return;
             }
             const show = approvedGoods.slice(0, 20);
             container.innerHTML = show.map(item => {
-                const game = gamesData.find(g => g.id === item.gameId);
+                const game = gamesData.find(g => g.id === item.game_id);
                 let discount = 0;
                 for (const p of promoCodes) {
-                    if (p.type === 'percent' && p.used < p.limit) {
-                        if ((p.gameId === item.gameId || p.gameId === null) &&
+                    if (p.type === 'percent' && p.used < p.limit_count) {
+                        if ((p.game_id === item.game_id || p.game_id === null) &&
                             (p.expires ? new Date(p.expires) > new Date() : true)) {
                             discount = p.value;
                             break;
@@ -2874,42 +2977,25 @@
                 const priceHtml = discount > 0 ?
                     `<span class="old-price">⭐${item.price}</span> ⭐${finalPrice}` :
                     `⭐${item.price}`;
-                const desc = item.desc || 'Описание отсутствует';
+                const desc = item.description || 'Описание отсутствует';
                 const seller = item.seller || 'Rubi';
 
                 return `
                     <div class="feed-item">
                         <div class="info">
                             <span class="game-tag">${game ? game.name : 'Неизвестно'} ${discount > 0 ? '🔥 -' + discount + '%' : ''}</span>
-                            <span class="item-name">${item.itemName}</span>
+                            <span class="item-name">${item.item_name}</span>
                             <span class="item-desc">${desc}</span>
                             <span class="item-seller">👤 ${seller}</span>
                         </div>
                         <div class="item-actions">
                             <span class="item-price">${priceHtml}</span>
-                            <button class="buy-btn" onclick="openBuyModal('${item.itemName}', ${finalPrice}, ${item.price}, '${item.gameId}', '${seller}')">Купить</button>
+                            <button class="buy-btn" onclick="openBuyModal('${item.item_name}', ${finalPrice}, ${item.price}, '${item.game_id}', '${seller}')">Купить</button>
                             ${seller !== currentUser.username ? `<button class="chat-seller-btn" onclick="openChatWithUser('${seller}')">💬 Чат</button>` : ''}
                         </div>
                     </div>
                 `;
             }).join('');
-        }
-
-        function addTestGoods() {
-            gamesData.forEach(g => {
-                g.items.forEach(item => {
-                    approvedGoods.push({
-                        gameId: g.id,
-                        itemName: item,
-                        price: Math.floor(Math.random() * 40) + 5,
-                        seller: 'Rubi',
-                        desc: 'Отличный товар!'
-                    });
-                });
-            });
-            approvedGoods = approvedGoods.slice(0, 18);
-            saveAllData();
-            renderFeed();
         }
 
         // ============================================================
@@ -2930,9 +3016,10 @@
             const chatKey = [currentUser.username, username].sort().join('_');
             if (!chats[chatKey]) {
                 chats[chatKey] = {
+                    id: chatKey,
                     users: [currentUser.username, username],
                     messages: [],
-                    readBy: []
+                    read_by: []
                 };
             }
 
@@ -2978,8 +3065,8 @@
 
             const promo = promoCodes.find(p =>
                 p.code === code &&
-                p.used < p.limit &&
-                (p.gameId === pendingPurchase.gameId || p.gameId === null) &&
+                p.used < p.limit_count &&
+                (p.game_id === pendingPurchase.gameId || p.game_id === null) &&
                 (p.expires ? new Date(p.expires) > new Date() : true)
             );
 
@@ -3012,7 +3099,7 @@
             }
         });
 
-        document.getElementById('modalConfirmBtn').addEventListener('click', function() {
+        document.getElementById('modalConfirmBtn').addEventListener('click', async function() {
             if (!pendingPurchase) return;
 
             const price = pendingPurchase.finalPrice;
@@ -3026,6 +3113,7 @@
             }
 
             currentUser.balance -= price;
+            if (!currentUser.history) currentUser.history = [];
             currentUser.history.unshift({ desc: `Покупка: ${name}`, amount: `-${price}`, plus: false });
 
             if (promo && promo.type === 'bonus') {
@@ -3050,15 +3138,17 @@
             const chatKey = [currentUser.username, seller].sort().join('_');
             if (!chats[chatKey]) {
                 chats[chatKey] = {
+                    id: chatKey,
                     users: [currentUser.username, seller],
                     messages: [],
                     purchase: purchaseData,
-                    readBy: []
+                    read_by: []
                 };
             } else {
                 chats[chatKey].purchase = purchaseData;
             }
 
+            if (!chats[chatKey].messages) chats[chatKey].messages = [];
             chats[chatKey].messages.push({
                 from: 'system',
                 text: `🛒 ${currentUser.username} купил "${name}" за ⭐${price}`,
@@ -3090,7 +3180,7 @@
             document.getElementById('reviewModal').classList.add('active');
 
             updateUI();
-            saveAllData();
+            await saveAllData();
             renderAll();
             alert(`✅ Вы купили "${name}" за ⭐${price}!`);
             pendingPurchase = null;
@@ -3104,7 +3194,7 @@
             pendingReviewData = null;
         });
 
-        document.getElementById('reviewSubmitBtn').addEventListener('click', function() {
+        document.getElementById('reviewSubmitBtn').addEventListener('click', async function() {
             if (!pendingReviewData) return;
             if (selectedReviewStars === 0) {
                 alert('Поставьте оценку!');
@@ -3124,6 +3214,7 @@
             if (chats[chatKey]) {
                 if (!chats[chatKey].reviews) chats[chatKey].reviews = [];
                 chats[chatKey].reviews.push(review);
+                if (!chats[chatKey].messages) chats[chatKey].messages = [];
                 chats[chatKey].messages.push({
                     from: currentUser.username,
                     text: `⭐ Оценка: ${selectedReviewStars}/5. ${text}`,
@@ -3135,7 +3226,7 @@
 
             document.getElementById('reviewModal').classList.remove('active');
             pendingReviewData = null;
-            saveAllData();
+            await saveAllData();
             renderChats();
             alert('✅ Спасибо за отзыв!');
         });
@@ -3170,15 +3261,17 @@
                 return;
             }
             select.innerHTML = '<option value="">— выберите товар —</option>';
-            game.items.forEach(item => {
-                const opt = document.createElement('option');
-                opt.value = item;
-                opt.textContent = item;
-                select.appendChild(opt);
-            });
+            if (game.items) {
+                game.items.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item;
+                    opt.textContent = item;
+                    select.appendChild(opt);
+                });
+            }
         });
 
-        document.getElementById('sellSubmitBtn').addEventListener('click', function() {
+        document.getElementById('sellSubmitBtn').addEventListener('click', async function() {
             const gameId = document.getElementById('sellGameSelect').value;
             const itemName = document.getElementById('sellItemSelect').value;
             const desc = document.getElementById('sellDescInput').value.trim() || 'Без описания';
@@ -3190,13 +3283,25 @@
 
             const newItem = {
                 id: idCounter++,
-                gameId: gameId,
-                itemName: itemName,
-                desc: desc,
+                game_id: gameId,
+                item_name: itemName,
+                description: desc,
                 price: price,
                 seller: currentUser.username,
                 status: 'pending'
             };
+
+            // Добавляем в модерацию
+            const { error } = await supabase
+                .from('moderation_queue')
+                .insert(newItem);
+
+            if (error) {
+                alert('❌ Ошибка при отправке товара на модерацию!');
+                console.error(error);
+                return;
+            }
+
             moderationQueue.push(newItem);
 
             document.getElementById('sellPriceInput').value = '';
@@ -3207,7 +3312,7 @@
             renderLots();
             renderModeration();
             updateUI();
-            saveAllData();
+            await saveAllData();
             alert(`✅ Товар отправлен на модерацию!`);
         });
 
@@ -3219,13 +3324,13 @@
                 return;
             }
             container.innerHTML = userLots.map(l => {
-                const game = gamesData.find(g => g.id === l.gameId);
+                const game = gamesData.find(g => g.id === l.game_id);
                 return `
                     <div class="feed-item" style="margin-bottom:6px;">
                         <div class="info">
                             <span class="game-tag">${game ? game.name : 'Неизвестно'}</span>
-                            <span class="item-name">${l.itemName}</span>
-                            <span class="item-desc">${l.desc || ''}</span>
+                            <span class="item-name">${l.item_name}</span>
+                            <span class="item-desc">${l.description || ''}</span>
                         </div>
                         <span class="status-pending">⏳ На модерации</span>
                     </div>
@@ -3247,16 +3352,26 @@
             });
         }
 
-        document.getElementById('adminAddGameBtn').addEventListener('click', function() {
+        document.getElementById('adminAddGameBtn').addEventListener('click', async function() {
             const name = document.getElementById('adminGameName').value.trim();
             if (!name) { alert('Введите название игры!'); return; }
 
             const newGame = {
                 id: name.toLowerCase().replace(/\s/g, '') + Date.now(),
                 name: name,
-                color: selectedColor,
-                items: []
+                color: selectedColor
             };
+
+            const { error } = await supabase
+                .from('games')
+                .insert(newGame);
+
+            if (error) {
+                alert('❌ Ошибка при добавлении игры!');
+                console.error(error);
+                return;
+            }
+
             gamesData.push(newGame);
             document.getElementById('adminGameName').value = '';
 
@@ -3265,11 +3380,11 @@
             populatePromoGames();
             populateAdminGoodsGames();
             renderGames();
-            saveAllData();
+            await saveAllData();
             alert(`✅ Игра "${name}" добавлена!`);
         });
 
-        document.getElementById('adminAddItemBtn').addEventListener('click', function() {
+        document.getElementById('adminAddItemBtn').addEventListener('click', async function() {
             const gameId = document.getElementById('adminGameSelect').value;
             const itemName = document.getElementById('adminItemName').value.trim();
             if (!gameId) { alert('Выберите игру!'); return; }
@@ -3278,12 +3393,28 @@
             const game = gamesData.find(g => g.id === gameId);
             if (!game) { alert('Игра не найдена!'); return; }
 
+            const newItem = {
+                game_id: gameId,
+                item_name: itemName
+            };
+
+            const { error } = await supabase
+                .from('game_items')
+                .insert(newItem);
+
+            if (error) {
+                alert('❌ Ошибка при добавлении товара!');
+                console.error(error);
+                return;
+            }
+
+            if (!game.items) game.items = [];
             game.items.push(itemName);
             document.getElementById('adminItemName').value = '';
             populateSellGames();
             populateAdminGoodsGames();
             renderGames();
-            saveAllData();
+            await saveAllData();
             alert(`✅ Товар "${itemName}" добавлен в "${game.name}"!`);
         });
 
@@ -3295,13 +3426,13 @@
                 return;
             }
             container.innerHTML = pending.map(m => {
-                const game = gamesData.find(g => g.id === m.gameId);
+                const game = gamesData.find(g => g.id === m.game_id);
                 return `
                     <div class="moderation-item">
                         <div class="mod-info">
-                            <strong>${m.itemName}</strong>
+                            <strong>${m.item_name}</strong>
                             <span class="mod-game">${game ? game.name : 'Неизвестно'} • ⭐${m.price}</span>
-                            ${m.desc ? `<span style="font-size:12px;color:#94a3b8;">${m.desc}</span>` : ''}
+                            ${m.description ? `<span style="font-size:12px;color:#94a3b8;">${m.description}</span>` : ''}
                             <span style="font-size:11px;color:#94a3b8;">Продавец: ${m.seller}</span>
                         </div>
                         <div class="mod-actions">
@@ -3313,32 +3444,74 @@
             }).join('');
         }
 
-        function approveItem(id) {
+        async function approveItem(id) {
             const item = moderationQueue.find(m => m.id === id);
             if (!item) return;
             item.status = 'approved';
-            approvedGoods.push({
-                gameId: item.gameId,
-                itemName: item.itemName,
+
+            // Обновляем в базе
+            const { error } = await supabase
+                .from('moderation_queue')
+                .update({ status: 'approved' })
+                .eq('id', id);
+
+            if (error) {
+                alert('❌ Ошибка при одобрении товара!');
+                console.error(error);
+                return;
+            }
+
+            // Добавляем в популярные товары
+            const newGood = {
+                game_id: item.game_id,
+                item_name: item.item_name,
                 price: item.price,
                 seller: item.seller,
-                desc: item.desc || 'Без описания'
-            });
+                description: item.description || 'Отличный товар!'
+            };
+
+            const { error: insertError } = await supabase
+                .from('approved_goods')
+                .insert(newGood);
+
+            if (insertError) {
+                alert('❌ Ошибка при добавлении в популярные товары!');
+                console.error(insertError);
+                return;
+            }
+
+            approvedGoods.push(newGood);
+
+            // Удаляем из модерации
+            moderationQueue = moderationQueue.filter(m => m.id !== id);
+
             renderFeed();
             renderModeration();
             renderAdminGoods();
             updateUI();
-            saveAllData();
-            alert(`✅ Товар "${item.itemName}" одобрен!`);
+            await saveAllData();
+            alert(`✅ Товар "${item.item_name}" одобрен!`);
         }
 
-        function rejectItem(id) {
+        async function rejectItem(id) {
             const item = moderationQueue.find(m => m.id === id);
             if (!item) return;
-            item.status = 'rejected';
+
+            const { error } = await supabase
+                .from('moderation_queue')
+                .update({ status: 'rejected' })
+                .eq('id', id);
+
+            if (error) {
+                alert('❌ Ошибка при отклонении товара!');
+                console.error(error);
+                return;
+            }
+
+            moderationQueue = moderationQueue.filter(m => m.id !== id);
             renderModeration();
-            saveAllData();
-            alert(`❌ Товар "${item.itemName}" отклонён.`);
+            await saveAllData();
+            alert(`❌ Товар "${item.item_name}" отклонён.`);
         }
 
         // ============================================================
@@ -3364,22 +3537,24 @@
                 return;
             }
             select.innerHTML = '<option value="">— выберите товар —</option>';
-            game.items.forEach(item => {
-                const opt = document.createElement('option');
-                opt.value = item;
-                opt.textContent = item;
-                select.appendChild(opt);
-            });
+            if (game.items) {
+                game.items.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item;
+                    opt.textContent = item;
+                    select.appendChild(opt);
+                });
+            }
         });
 
-        document.getElementById('adminAddGoodsBtn').addEventListener('click', function() {
+        document.getElementById('adminAddGoodsBtn').addEventListener('click', async function() {
             const gameId = document.getElementById('adminGoodsGameSelect').value;
             const itemName = document.getElementById('adminGoodsItemSelect').value;
 
             if (!gameId) { alert('Выберите игру!'); return; }
             if (!itemName) { alert('Выберите товар!'); return; }
 
-            if (approvedGoods.some(g => g.gameId === gameId && g.itemName === itemName)) {
+            if (approvedGoods.some(g => g.game_id === gameId && g.item_name === itemName)) {
                 alert('Этот товар уже есть в популярных!');
                 return;
             }
@@ -3387,15 +3562,27 @@
             const game = gamesData.find(g => g.id === gameId);
             const price = Math.floor(Math.random() * 40) + 5;
 
-            approvedGoods.push({
-                gameId: gameId,
-                itemName: itemName,
+            const newGood = {
+                game_id: gameId,
+                item_name: itemName,
                 price: price,
                 seller: 'Rubi',
-                desc: 'Популярный товар!'
-            });
+                description: 'Популярный товар!'
+            };
 
-            saveAllData();
+            const { error } = await supabase
+                .from('approved_goods')
+                .insert(newGood);
+
+            if (error) {
+                alert('❌ Ошибка при добавлении товара!');
+                console.error(error);
+                return;
+            }
+
+            approvedGoods.push(newGood);
+
+            await saveAllData();
             renderFeed();
             renderAdminGoods();
             alert(`✅ Товар "${itemName}" добавлен в популярные!`);
@@ -3409,13 +3596,13 @@
             }
 
             container.innerHTML = approvedGoods.map((item, index) => {
-                const game = gamesData.find(g => g.id === item.gameId);
+                const game = gamesData.find(g => g.id === item.game_id);
                 return `
                     <div class="admin-goods-item">
                         <div class="goods-info">
-                            <span class="goods-name">${item.itemName}</span>
+                            <span class="goods-name">${item.item_name}</span>
                             <span class="goods-meta">${game ? game.name : 'Неизвестно'} • ⭐${item.price} • 👤 ${item.seller || 'Rubi'}</span>
-                            ${item.desc ? `<span class="goods-meta">${item.desc}</span>` : ''}
+                            ${item.description ? `<span class="goods-meta">${item.description}</span>` : ''}
                         </div>
                         <button class="admin-btn outline" onclick="removeGoods(${index})">🗑 Удалить</button>
                     </div>
@@ -3423,10 +3610,23 @@
             }).join('');
         }
 
-        function removeGoods(index) {
+        async function removeGoods(index) {
             if (!confirm('Удалить этот товар из популярных?')) return;
+            const item = approvedGoods[index];
+
+            const { error } = await supabase
+                .from('approved_goods')
+                .delete()
+                .eq('id', item.id);
+
+            if (error) {
+                alert('❌ Ошибка при удалении товара!');
+                console.error(error);
+                return;
+            }
+
             approvedGoods.splice(index, 1);
-            saveAllData();
+            await saveAllData();
             renderFeed();
             renderAdminGoods();
             alert('✅ Товар удалён из популярных!');
@@ -3446,7 +3646,7 @@
             });
         }
 
-        document.getElementById('adminAddPromoBtn').addEventListener('click', function() {
+        document.getElementById('adminAddPromoBtn').addEventListener('click', async function() {
             const code = document.getElementById('promoCode').value.trim().toUpperCase();
             const value = parseInt(document.getElementById('promoValue').value);
             const limit = parseInt(document.getElementById('promoLimit').value) || 1;
@@ -3466,15 +3666,27 @@
                 }
             }
 
-            promoCodes.push({
-                code,
-                type,
-                value,
-                limit,
+            const newPromo = {
+                code: code,
+                type: type,
+                value: value,
+                limit_count: limit,
                 used: 0,
-                gameId: gameId || null,
+                game_id: gameId || null,
                 expires: expires || null
-            });
+            };
+
+            const { error } = await supabase
+                .from('promo_codes')
+                .insert(newPromo);
+
+            if (error) {
+                alert('❌ Ошибка при создании промокода!');
+                console.error(error);
+                return;
+            }
+
+            promoCodes.push(newPromo);
 
             document.getElementById('promoCode').value = '';
             document.getElementById('promoValue').value = '';
@@ -3484,7 +3696,7 @@
             renderPromos();
             renderGames();
             renderFeed();
-            saveAllData();
+            await saveAllData();
             alert(`✅ Промокод "${code}" создан!`);
         });
 
@@ -3495,12 +3707,12 @@
                 return;
             }
             container.innerHTML = promoCodes.map(p => {
-                const game = p.gameId ? gamesData.find(g => g.id === p.gameId) : null;
+                const game = p.game_id ? gamesData.find(g => g.id === p.game_id) : null;
                 const typeText = p.type === 'percent' ? `Скидка ${p.value}%` : `Бонус ${p.value}⭐`;
-                const usedText = `${p.used}/${p.limit}`;
+                const usedText = `${p.used}/${p.limit_count}`;
                 const expiresText = p.expires ? `до ${p.expires}` : 'бессрочный';
                 const isExpired = p.expires ? new Date(p.expires) < new Date() : false;
-                const isValid = !isExpired && p.used < p.limit;
+                const isValid = !isExpired && p.used < p.limit_count;
                 return `
                     <div class="promo-item">
                         <span class="promo-code">${p.code}</span>
@@ -3527,7 +3739,7 @@
             });
         });
 
-        document.getElementById('withdrawBtn').addEventListener('click', function() {
+        document.getElementById('withdrawBtn').addEventListener('click', async function() {
             const tg = document.getElementById('withdrawTg').value.trim();
             let amount = parseInt(document.getElementById('withdrawAmount')?.value) || selectedWithdrawAmount;
 
@@ -3551,16 +3763,28 @@
             let tgClean = tg;
             if (tgClean.startsWith('@')) tgClean = tgClean.substring(1);
 
-            withdrawRequests.push({
-                id: idCounter++,
-                user: currentUser.username,
+            const newRequest = {
+                user_id: currentUser.username,
                 tg: tgClean,
                 amount: amount,
                 status: 'pending',
                 timestamp: new Date().toISOString()
-            });
+            };
+
+            const { error } = await supabase
+                .from('withdraw_requests')
+                .insert(newRequest);
+
+            if (error) {
+                alert('❌ Ошибка при отправке заявки!');
+                console.error(error);
+                return;
+            }
+
+            withdrawRequests.push(newRequest);
 
             currentUser.balance -= amount;
+            if (!currentUser.history) currentUser.history = [];
             currentUser.history.unshift({ desc: `Заявка на вывод ${amount}⭐ на @${tgClean}`, amount: `-${amount}`,
                 plus: false });
 
@@ -3569,7 +3793,7 @@
             selectedWithdrawAmount = null;
             document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
 
-            saveAllData();
+            await saveAllData();
             updateUI();
             renderWithdrawRequests();
             alert(`✅ Заявка на вывод ${amount}⭐ отправлена!`);
@@ -3577,7 +3801,7 @@
 
         function renderWithdrawRequests() {
             const container = document.getElementById('withdrawRequestsList');
-            if (!currentUser.isAdmin) {
+            if (!currentUser.is_admin) {
                 container.innerHTML = '';
                 return;
             }
@@ -3591,7 +3815,7 @@
             container.innerHTML = pending.map(r => `
                 <div class="moderation-item">
                     <div class="mod-info">
-                        <strong>${r.user}</strong>
+                        <strong>${r.user_id}</strong>
                         <span class="mod-game">📤 ${r.amount}⭐ на @${r.tg}</span>
                         <span style="font-size:11px;color:#94a3b8;">${new Date(r.timestamp).toLocaleString()}</span>
                     </div>
@@ -3603,33 +3827,55 @@
             `).join('');
         }
 
-        function approveWithdraw(id) {
+        async function approveWithdraw(id) {
             const req = withdrawRequests.find(r => r.id === id);
             if (!req) return;
-            req.status = 'approved';
 
-            const user = users.find(u => u.username === req.user);
+            const { error } = await supabase
+                .from('withdraw_requests')
+                .update({ status: 'approved' })
+                .eq('id', id);
+
+            if (error) {
+                alert('❌ Ошибка при одобрении заявки!');
+                console.error(error);
+                return;
+            }
+
+            const user = users.find(u => u.username === req.user_id);
             if (user) {
+                if (!user.history) user.history = [];
                 user.history.unshift({ desc: `Вывод ${req.amount}⭐ на @${req.tg} (одобрен)`, amount: `-${req.amount}`,
                     plus: false });
             }
 
             withdrawRequests = withdrawRequests.filter(r => r.id !== id);
 
-            saveAllData();
+            await saveAllData();
             renderWithdrawRequests();
             updateUI();
             alert(`✅ Заявка на вывод ${req.amount}⭐ одобрена!`);
         }
 
-        function rejectWithdraw(id) {
+        async function rejectWithdraw(id) {
             const req = withdrawRequests.find(r => r.id === id);
             if (!req) return;
-            req.status = 'rejected';
 
-            const user = users.find(u => u.username === req.user);
+            const { error } = await supabase
+                .from('withdraw_requests')
+                .update({ status: 'rejected' })
+                .eq('id', id);
+
+            if (error) {
+                alert('❌ Ошибка при отклонении заявки!');
+                console.error(error);
+                return;
+            }
+
+            const user = users.find(u => u.username === req.user_id);
             if (user) {
                 user.balance += req.amount;
+                if (!user.history) user.history = [];
                 user.history.unshift({ desc: `Возврат ${req.amount}⭐ (вывод отклонён)`, amount: `+${req.amount}`,
                     plus: true });
                 if (user.username === currentUser.username) {
@@ -3639,7 +3885,7 @@
 
             withdrawRequests = withdrawRequests.filter(r => r.id !== id);
 
-            saveAllData();
+            await saveAllData();
             updateUI();
             renderWithdrawRequests();
             alert(`❌ Заявка на вывод ${req.amount}⭐ отклонена.`);
@@ -3650,7 +3896,7 @@
         // ============================================================
         function renderUsers(searchTerm = '') {
             const container = document.getElementById('usersList');
-            if (!currentUser.isAdmin) {
+            if (!currentUser.is_admin) {
                 container.innerHTML = '';
                 return;
             }
@@ -3660,7 +3906,7 @@
                 const term = searchTerm.trim().toLowerCase();
                 filteredUsers = users.filter(u =>
                     u.username.toLowerCase().includes(term) ||
-                    (u.displayName && u.displayName.toLowerCase().includes(term)) ||
+                    (u.display_name && u.display_name.toLowerCase().includes(term)) ||
                     (u.tg && u.tg.toLowerCase().includes(term))
                 );
             }
@@ -3673,13 +3919,13 @@
             container.innerHTML = filteredUsers.map(u => `
                 <div class="user-item">
                     <div class="user-info">
-                        <span class="user-name">${u.displayName || u.username} ${u.isAdmin ? '👑' : ''}</span>
+                        <span class="user-name">${u.display_name || u.username} ${u.is_admin ? '👑' : ''}</span>
                         <span style="font-size:12px;color:#94a3b8;">@${u.username}</span>
                         <span class="user-balance">⭐ ${u.balance}</span>
                         ${u.tg ? `<span style="font-size:12px;color:#94a3b8;">@${u.tg}</span>` : ''}
                     </div>
                     <div class="user-actions">
-                        ${u.isAdmin ? '<span class="role-badge">Админ</span>' : ''}
+                        ${u.is_admin ? '<span class="role-badge">Админ</span>' : ''}
                         <input type="number" id="balanceInput_${u.id}" value="${u.balance}" min="0" />
                         <button class="admin-btn" onclick="setUserBalance(${u.id})">Изменить</button>
                     </div>
@@ -3687,7 +3933,7 @@
             `).join('');
         }
 
-        function setUserBalance(userId) {
+        async function setUserBalance(userId) {
             const input = document.getElementById(`balanceInput_${userId}`);
             const newBalance = parseInt(input.value);
             if (isNaN(newBalance) || newBalance < 0) {
@@ -3696,11 +3942,23 @@
             }
             const user = users.find(u => u.id === userId);
             if (!user) return;
+
+            const { error } = await supabase
+                .from('users')
+                .update({ balance: newBalance })
+                .eq('id', userId);
+
+            if (error) {
+                alert('❌ Ошибка при изменении баланса!');
+                console.error(error);
+                return;
+            }
+
             user.balance = newBalance;
             if (user.id === currentUser.id) {
                 currentUser.balance = newBalance;
             }
-            saveAllData();
+            await saveAllData();
             updateUI();
             renderUsers(document.getElementById('userSearchInput').value);
             alert(`✅ Баланс пользователя ${user.username} изменён на ⭐${newBalance}`);
@@ -3725,18 +3983,19 @@
             container.innerHTML = uniqueChats.map(chatKey => {
                 const chat = chats[chatKey];
                 if (!chat) return '';
-                const isSystem = chat.isSystem || false;
+                const isSystem = chat.is_system || false;
                 const otherUser = isSystem ? 'Rubi Тех.поддержка' : (chat.users.find(u => u !== currentUser.username) ||
                     'Неизвестно');
-                const lastMsg = chat.messages && chat.messages.length > 0 ?
-                    chat.messages[chat.messages.length - 1].text.substring(0, 40) + '...' :
+                const messages = chat.messages || [];
+                const lastMsg = messages.length > 0 ?
+                    messages[messages.length - 1].text.substring(0, 40) + '...' :
                     'Нет сообщений';
                 const purchase = chat.purchase ? `${chat.purchase.itemName} (⭐${chat.purchase.price})` : '';
-                const unreadCount = chat.messages ? chat.messages.filter(m =>
+                const unreadCount = messages.filter(m =>
                     m.from !== currentUser.username && m.from !== 'system' && !m.isRead
-                ).length : 0;
-                const lastTime = chat.messages && chat.messages.length > 0 ?
-                    new Date(chat.messages[chat.messages.length - 1].time).toLocaleTimeString() : '';
+                ).length;
+                const lastTime = messages.length > 0 ?
+                    new Date(messages[messages.length - 1].time).toLocaleTimeString() : '';
 
                 const icon = isSystem ? '⚠️' : '💬';
 
@@ -3764,7 +4023,7 @@
             if (!chat) return;
 
             currentChatWith = chatKey;
-            const isSystem = chat.isSystem || false;
+            const isSystem = chat.is_system || false;
             const otherUser = isSystem ? 'Rubi Тех.поддержка' : (chat.users.find(u => u !== currentUser.username) ||
                 'Неизвестно');
 
@@ -3841,7 +4100,7 @@
             if (e.key === 'Enter') sendMessage();
         });
 
-        function sendMessage() {
+        async function sendMessage() {
             const input = document.getElementById('chatInput');
             const text = input.value.trim();
             if (!text || !currentChatWith) return;
@@ -3849,6 +4108,7 @@
             const chat = chats[currentChatWith];
             if (!chat) return;
 
+            if (!chat.messages) chat.messages = [];
             chat.messages.push({
                 from: currentUser.username,
                 text: text,
@@ -3860,7 +4120,7 @@
 
             input.value = '';
             renderMessages();
-            saveAllData();
+            await saveAllData();
             renderChats();
         }
 
@@ -3873,7 +4133,7 @@
         const settingsMsg = document.getElementById('settingsMsg');
 
         document.getElementById('profileSettingsBtn').addEventListener('click', function() {
-            settingsNameInput.value = currentUser.displayName || currentUser.username;
+            settingsNameInput.value = currentUser.display_name || currentUser.username;
             settingsUsernameInput.value = currentUser.username;
             settingsMsg.textContent = '';
             settingsModal.classList.add('active');
@@ -3883,7 +4143,7 @@
             settingsModal.classList.remove('active');
         });
 
-        document.getElementById('settingsSaveBtn').addEventListener('click', function() {
+        document.getElementById('settingsSaveBtn').addEventListener('click', async function() {
             const newName = settingsNameInput.value.trim();
             const newUsername = settingsUsernameInput.value.trim().toLowerCase();
 
@@ -3936,7 +4196,7 @@
                     if (m.seller === oldUsername) m.seller = newUsername;
                 });
                 withdrawRequests.forEach(r => {
-                    if (r.user === oldUsername) r.user = newUsername;
+                    if (r.user_id === oldUsername) r.user_id = newUsername;
                 });
 
                 users.forEach(u => {
@@ -3972,17 +4232,30 @@
                 }
             }
 
-            currentUser.displayName = newName;
+            currentUser.display_name = newName;
 
             const user = users.find(u => u.id === currentUser.id);
             if (user) {
                 user.username = currentUser.username;
-                user.displayName = currentUser.displayName;
+                user.display_name = currentUser.display_name;
+            }
+
+            // Обновляем в базе
+            const { error } = await supabase
+                .from('users')
+                .update({ username: currentUser.username, display_name: currentUser.display_name })
+                .eq('id', currentUser.id);
+
+            if (error) {
+                settingsMsg.textContent = '❌ Ошибка при сохранении!';
+                settingsMsg.style.color = '#dc2626';
+                console.error(error);
+                return;
             }
 
             settingsModal.classList.remove('active');
             updateProfileUI();
-            saveAllData();
+            await saveAllData();
             renderAll();
             alert(`✅ Профиль обновлён!`);
         });
@@ -3990,7 +4263,7 @@
         // ============================================================
         //  ПРОФИЛЬ — АКТИВАЦИЯ ПРОМОКОДА
         // ============================================================
-        document.getElementById('profilePromoBtn').addEventListener('click', function() {
+        document.getElementById('profilePromoBtn').addEventListener('click', async function() {
             const input = document.getElementById('profilePromoInput');
             const code = input.value.trim().toUpperCase();
             const msg = document.getElementById('profilePromoMessage');
@@ -4003,7 +4276,7 @@
 
             const promo = promoCodes.find(p =>
                 p.code === code &&
-                p.used < p.limit &&
+                p.used < p.limit_count &&
                 (p.expires ? new Date(p.expires) > new Date() : true)
             );
 
@@ -4015,9 +4288,25 @@
 
             if (promo.type === 'bonus') {
                 currentUser.balance += promo.value;
+                if (!currentUser.history) currentUser.history = [];
                 currentUser.history.unshift({ desc: `Бонус по промокоду ${promo.code}`, amount: `+${promo.value}`,
                     plus: true });
                 promo.used += 1;
+
+                const { error } = await supabase
+                    .from('promo_codes')
+                    .update({ used: promo.used })
+                    .eq('code', promo.code);
+
+                if (error) console.error('Ошибка обновления промокода:', error);
+
+                const { error: userError } = await supabase
+                    .from('users')
+                    .update({ balance: currentUser.balance })
+                    .eq('id', currentUser.id);
+
+                if (userError) console.error('Ошибка обновления баланса:', userError);
+
                 msg.textContent = `✅ +${promo.value}⭐ зачислено!`;
                 msg.style.color = '#16a34a';
                 input.value = '';
@@ -4025,7 +4314,7 @@
                 renderPromos();
                 renderGames();
                 renderFeed();
-                saveAllData();
+                await saveAllData();
             } else if (promo.type === 'percent') {
                 msg.textContent = `ℹ️ Промокод на скидку ${promo.value}% — используйте при покупке!`;
                 msg.style.color = '#f59e0b';
@@ -4036,6 +4325,7 @@
         //  ОБНОВЛЕНИЕ UI
         // ============================================================
         function updateUI() {
+            if (!currentUser) return;
             document.getElementById('balanceDisplay').innerHTML = `⭐ ${currentUser.balance}`;
 
             const historyContainer = document.getElementById('historyList');
@@ -4061,7 +4351,7 @@
             renderChats();
             renderWithdrawRequests();
             renderAdminGoods();
-            if (currentUser.isAdmin) {
+            if (currentUser && currentUser.is_admin) {
                 renderUsers(document.getElementById('userSearchInput')?.value || '');
             }
         }
@@ -4128,50 +4418,50 @@
         // ============================================================
         //  ЗАПУСК
         // ============================================================
-        loadUsers();
+        async function init() {
+            // Загружаем данные из Supabase
+            await loadAllData();
 
-        const savedSession = localStorage.getItem('rubi_session');
-        if (savedSession) {
-            const user = users.find(u => u.username === savedSession);
-            if (user) {
-                currentUser = user;
-                loadAllData();
-                initSystemChat();
-                enterApp();
-                renderAll();
-                updateUI();
+            // Проверяем сессию
+            const savedSession = localStorage.getItem('rubi_session');
+            if (savedSession) {
+                const user = users.find(u => u.username === savedSession);
+                if (user) {
+                    currentUser = user;
+                    initSystemChat();
+                    enterApp();
+                    renderAll();
+                    updateUI();
+                    populateSellGames();
+                    populateAdminGames();
+                    populatePromoGames();
+                    populateAdminGoodsGames();
+                }
+            }
+
+            if (!currentUser) {
+                authOverlay.classList.add('active');
+            }
+
+            // Переопределяем enterApp для сохранения сессии
+            const origEnterApp = enterApp;
+            enterApp = function() {
+                origEnterApp();
+                localStorage.setItem('rubi_session', currentUser.username);
                 populateSellGames();
                 populateAdminGames();
                 populatePromoGames();
                 populateAdminGoodsGames();
-            }
+            };
+
+            console.log('🔥 Rubi с Supabase готов!');
+            console.log('👤 Админ: admin / admin123');
+            console.log('👤 Пользователь: user / user123');
+            console.log('📢 Подписывайтесь на канал: t.me/rubishopgame');
         }
 
-        if (!currentUser) {
-            authOverlay.classList.add('active');
-        }
-
-        const origEnterApp = enterApp;
-        enterApp = function() {
-            origEnterApp();
-            localStorage.setItem('rubi_session', currentUser.username);
-            populateSellGames();
-            populateAdminGames();
-            populatePromoGames();
-            populateAdminGoodsGames();
-        };
-
-        console.log('🔥 Rubi готов!');
-        console.log('👤 Админ: admin / admin123');
-        console.log('👤 Пользователь: user / user123');
-        console.log('🛟 Чат техподдержки: ⚠️ Rubi Тех.поддержка');
-        console.log('💳 Вывод звёзд: от 100 до 10 000 ⭐');
-        console.log('⭐ Отзывы: работают!');
-        console.log('💬 Кнопка "Чат с продавцом" — открывает чат по нику');
-        console.log('⚙️ Настройки профиля: можно сменить имя и юзернейм');
-        console.log('💰 При регистрации баланс 0 ⭐');
-        console.log('💾 При выходе баланс сохраняется');
-        console.log('📢 Подписывайтесь на канал: t.me/rubishopgame');
+        // Запускаем при загрузке страницы
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
-                                                           </html>
+    </html>
