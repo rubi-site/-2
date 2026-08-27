@@ -1,4098 +1,1204 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Rubi</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
+  <title>Ruby — маркетплейс</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+    }
 
-    <style>
-        /* ============================================================ */
-        /*  ГЛОБАЛЬНЫЕ СБРОСЫ                                            */
-        /* ============================================================ */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-        }
+    body {
+      background-color: #0b0f1c;
+      color: #e0e6f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 80px;
+    }
 
-        html,
-        body {
-            height: 100%;
-            background: #f2f3f5;
-            overflow: hidden;
-        }
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1a253b;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #ff4d6d;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(255, 77, 109, 0.3);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #ff6b8a;
+    }
 
-        body.light {
-            background: #f2f3f5;
-            color: #1e293b;
-        }
-        body.dark {
-            background: #12121c;
-            color: #e2e8f0;
-        }
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 20px;
+      width: 100%;
+    }
 
-        /* ============================================================ */
-        /*  ОСНОВНОЙ КОНТЕЙНЕР                                           */
-        /* ============================================================ */
-        .app-wrapper {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
+    /* HEADER */
+    header {
+      background: #0b0f1c;
+      padding: 14px 0;
+      border-bottom: 1px solid #1a253b;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(4px);
+    }
+    .header-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 24px;
+      font-weight: 700;
+      color: #e0e6f0;
+      text-decoration: none;
+    }
+    .logo i {
+      color: #ff4d6d;
+      font-size: 28px;
+      filter: drop-shadow(0 0 8px rgba(255, 77, 109, 0.4));
+    }
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .header-user .balance {
+      background: #1a253b;
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 15px;
+      color: #ffb3c6;
+      border: 1px solid #2a3f6a;
+    }
+    .header-user .balance i {
+      color: #ffb3c6;
+      margin-right: 6px;
+    }
+    .header-user .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #2a3f6a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #fff;
+      border: 2px solid #ff4d6d;
+      cursor: pointer;
+    }
 
-        /* ============================================================ */
-        /*  ЭКРАН РЕГИСТРАЦИИ / ВХОДА                                    */
-        /* ============================================================ */
-        .auth-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .auth-overlay.active {
-            display: flex;
-        }
-        .auth-box {
-            background: #ffffff;
-            border-radius: 28px;
-            padding: 40px 32px;
-            max-width: 400px;
-            width: 100%;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
-            animation: modalIn 0.3s ease;
-        }
-        body.dark .auth-box {
-            background: #1e1e32;
-        }
-        .auth-box h2 {
-            font-size: 28px;
-            font-weight: 800;
-            text-align: center;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 6px;
-        }
-        .auth-box .subtitle {
-            text-align: center;
-            color: #94a3b8;
-            font-size: 14px;
-            margin-bottom: 24px;
-        }
-        .auth-box .auth-input {
-            width: 100%;
-            padding: 14px 18px;
-            border-radius: 14px;
-            border: 2px solid #e2e8f0;
-            background: #f8fafc;
-            font-size: 15px;
-            margin-bottom: 12px;
-            outline: none;
-            transition: 0.15s;
-        }
-        body.dark .auth-box .auth-input {
-            background: #2a2a44;
-            border-color: #3a3a55;
-            color: #e2e8f0;
-        }
-        .auth-box .auth-input:focus {
-            border-color: #3b82f6;
-        }
-        .auth-box .auth-btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-            border: none;
-            border-radius: 60px;
-            font-weight: 700;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .auth-box .auth-btn:hover {
-            opacity: 0.92;
-            transform: scale(1.01);
-        }
-        .auth-box .auth-switch {
-            text-align: center;
-            margin-top: 14px;
-            font-size: 14px;
-            color: #94a3b8;
-        }
-        .auth-box .auth-switch span {
-            color: #3b82f6;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .auth-box .auth-switch span:hover {
-            text-decoration: underline;
-        }
-        .auth-box .auth-error {
-            color: #dc2626;
-            font-size: 14px;
-            text-align: center;
-            margin-bottom: 10px;
-            display: none;
-        }
+    /* НИЖНЯЯ НАВИГАЦИЯ */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #0b0f1c;
+      border-top: 1px solid #1a253b;
+      padding: 8px 0 12px;
+      z-index: 30;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .bottom-nav a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: #5a6a8a;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 500;
+      transition: 0.2s;
+      padding: 4px 12px;
+      border-radius: 12px;
+    }
+    .bottom-nav a i {
+      font-size: 22px;
+    }
+    .bottom-nav a:hover {
+      color: #b0c4e0;
+    }
+    .bottom-nav a.active {
+      color: #ff4d6d;
+    }
+    .bottom-nav a.active i {
+      text-shadow: 0 0 16px rgba(255, 77, 109, 0.3);
+    }
 
-        /* ============================================================ */
-        /*  ШАПКА                                                        */
-        /* ============================================================ */
-        .header {
-            padding: 16px 0 12px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
-            background: inherit;
-            border-bottom: 1px solid #e9ecef;
-        }
-        body.dark .header {
-            border-bottom-color: #2d2d44;
-        }
-        .header h1 {
-            font-size: 28px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.5px;
-        }
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .header-actions .user-badge {
-            font-size: 14px;
-            font-weight: 600;
-            color: #3b82f6;
-            background: #eff6ff;
-            padding: 4px 14px;
-            border-radius: 40px;
-        }
-        body.dark .header-actions .user-badge {
-            background: #1a2a4a;
-            color: #60a5fa;
-        }
-        .theme-toggle {
-            background: none;
-            border: none;
-            font-size: 22px;
-            cursor: pointer;
-            padding: 4px 10px;
-            border-radius: 30px;
-            background: rgba(0, 0, 0, 0.05);
-        }
-        body.dark .theme-toggle {
-            background: rgba(255, 255, 255, 0.08);
-        }
-        .logout-btn {
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            color: #94a3b8;
-            padding: 4px 8px;
-            border-radius: 30px;
-            transition: 0.15s;
-        }
-        .logout-btn:hover {
-            color: #dc2626;
-            background: rgba(220, 38, 38, 0.1);
-        }
+    /* СТРАНИЦЫ */
+    .page { display: block; }
+    .page.hidden { display: none; }
 
-        /* ============================================================ */
-        /*  ОСНОВНОЙ КОНТЕНТ                                            */
-        /* ============================================================ */
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px 0 20px 0;
-            margin-bottom: 10px;
-        }
-        .main-content::-webkit-scrollbar {
-            width: 4px;
-        }
-        .main-content::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 20px;
-        }
-        body.dark .main-content::-webkit-scrollbar-thumb {
-            background: #3a3a55;
-        }
+    /* HERO */
+    .hero {
+      background: linear-gradient(145deg, #121b30, #0b0f1c);
+      border-radius: 24px;
+      padding: 32px 28px;
+      margin: 20px 0 24px;
+      border: 1px solid #2a3f6a;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero h2 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .hero h2 i {
+      color: #ff4d6d;
+    }
+    .hero p {
+      color: #8899bb;
+      font-size: 15px;
+    }
+    .hero .btn-shop {
+      margin-top: 14px;
+      background: #ff4d6d;
+      border: none;
+      padding: 10px 28px;
+      border-radius: 40px;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      transition: 0.3s;
+      font-size: 15px;
+    }
+    .hero .btn-shop:hover {
+      background: #ff6b8a;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 77, 109, 0.3);
+    }
 
-        .page {
-            display: none;
-            animation: fadeUp 0.3s ease;
-        }
-        .page.active {
-            display: block;
-        }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px 0 14px;
+    }
+    .section-header h3 {
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .section-header h3 i {
+      color: #ff4d6d;
+      margin-right: 10px;
+    }
+    .section-header a {
+      color: #ff4d6d;
+      font-size: 14px;
+      text-decoration: none;
+      font-weight: 600;
+    }
 
-        @keyframes fadeUp {
-            0% {
-                opacity: 0.3;
-                transform: translateY(8px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+    /* КАРТОЧКИ ИГР/ПРИЛОЖЕНИЙ */
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 18px;
+      margin-bottom: 30px;
+    }
+    .game-card {
+      background: linear-gradient(145deg, #141e32, #0b0f1c);
+      border-radius: 20px;
+      padding: 14px;
+      border: 1px solid #1f2f4a;
+      transition: 0.3s ease;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+    .game-card:hover {
+      transform: translateY(-6px);
+      border-color: #ff4d6d;
+      box-shadow: 0 12px 28px rgba(255, 77, 109, 0.12);
+    }
+    .game-card .icon {
+      font-size: 40px;
+      text-align: center;
+      padding: 16px 0;
+      background: #1a253b;
+      border-radius: 16px;
+      margin-bottom: 10px;
+      color: #ff4d6d;
+    }
+    .game-card .name {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+    .game-card .meta {
+      font-size: 13px;
+      color: #8899bb;
+    }
+    .game-card .price {
+      font-weight: 700;
+      font-size: 18px;
+      color: #ffb3c6;
+      margin-top: 8px;
+    }
+    .game-card .price i {
+      color: #ffb3c6;
+      margin-right: 4px;
+    }
+    .game-card .price .from {
+      font-size: 12px;
+      font-weight: 400;
+      color: #8899bb;
+      margin-left: 4px;
+    }
 
-        /* ============================================================ */
-        /*  ГЛАВНАЯ                                                     */
-        /* ============================================================ */
-        .section-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin: 18px 0 14px 0;
-        }
-        .section-title:first-of-type {
-            margin-top: 0;
-        }
+    /* ТОВАРЫ */
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 14px;
+      margin: 10px 0 20px;
+    }
+    .item-card {
+      background: #1a253b;
+      border-radius: 16px;
+      padding: 12px;
+      border: 1px solid #2a3f6a;
+      transition: 0.3s;
+    }
+    .item-card:hover {
+      border-color: #ff4d6d;
+      transform: translateY(-3px);
+    }
+    .item-card .item-name {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .item-card .item-desc {
+      font-size: 12px;
+      color: #8899bb;
+      margin-bottom: 8px;
+    }
+    .item-card .item-price {
+      font-weight: 700;
+      font-size: 17px;
+      color: #ffb3c6;
+    }
+    .item-card .item-price i {
+      color: #ffb3c6;
+      margin-right: 4px;
+    }
+    .item-card .btn-buy {
+      margin-top: 8px;
+      background: #ff4d6d;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 30px;
+      color: #fff;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: 0.2s;
+      width: 100%;
+    }
+    .item-card .btn-buy:hover {
+      background: #ff6b8a;
+    }
 
-        .games-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 14px;
-            margin-bottom: 8px;
-        }
+    .back-btn {
+      background: #1a253b;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 30px;
+      color: #b0c4e0;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.2s;
+      margin-bottom: 10px;
+    }
+    .back-btn:hover {
+      background: #2a3f6a;
+      color: #fff;
+    }
 
-        .game-card {
-            background: #ffffff;
-            border-radius: 18px;
-            padding: 18px 12px 14px 12px;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            transition: 0.2s;
-            border: 2px solid transparent;
-            position: relative;
-        }
-        body.dark .game-card {
-            background: #1e1e32;
-        }
-        .game-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10);
-            border-color: #3b82f6;
-        }
-        .game-card .game-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            margin: 0 auto 8px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: 700;
-            color: #fff;
-        }
-        .game-card h4 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1e293b;
-        }
-        body.dark .game-card h4 {
-            color: #e2e8f0;
-        }
-        .game-card p {
-            font-size: 12px;
-            color: #94a3b8;
-        }
-        .game-card .discount-badge {
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            background: #3b82f6;
-            color: #fff;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 40px;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%,
-            100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
-        }
+    /* ПРОДАЖА */
+    .sell-form {
+      background: #141e32;
+      border-radius: 24px;
+      padding: 24px;
+      border: 1px solid #2a3f6a;
+      margin: 16px 0;
+    }
+    .sell-form .form-group {
+      margin-bottom: 16px;
+    }
+    .sell-form .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: #b0c4e0;
+    }
+    .sell-form .form-group select,
+    .sell-form .form-group input,
+    .sell-form .form-group textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: #1a253b;
+      border: 1px solid #2a3f6a;
+      border-radius: 12px;
+      color: #e0e6f0;
+      font-size: 14px;
+      outline: none;
+      transition: 0.2s;
+    }
+    .sell-form .form-group select:focus,
+    .sell-form .form-group input:focus,
+    .sell-form .form-group textarea:focus {
+      border-color: #ff4d6d;
+      box-shadow: 0 0 0 3px rgba(255, 77, 109, 0.1);
+    }
+    .sell-form .form-group textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .btn-sell {
+      background: #ff4d6d;
+      border: none;
+      padding: 14px;
+      border-radius: 40px;
+      font-weight: 700;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+      width: 100%;
+    }
+    .btn-sell:hover {
+      background: #ff6b8a;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255, 77, 109, 0.3);
+    }
+    .my-items .empty {
+      color: #5a6a8a;
+      text-align: center;
+      padding: 30px 0;
+    }
 
-        .game-goods-section {
-            margin-top: 12px;
-            margin-bottom: 16px;
-            border-radius: 18px;
-            overflow: hidden;
-            background: #ffffff;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-            display: none;
-        }
-        body.dark .game-goods-section {
-            background: #1e1e32;
-        }
-        .game-goods-section.active {
-            display: block;
-            animation: slideDown 0.3s ease;
-        }
-        @keyframes slideDown {
-            0% {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .game-goods-section .goods-header {
-            padding: 14px 18px;
-            font-weight: 700;
-            font-size: 16px;
-            background: #eff6ff;
-            color: #1e293b;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-        body.dark .game-goods-section .goods-header {
-            background: #1a2a4a;
-            color: #e2e8f0;
-        }
-        .game-goods-section .goods-header .close-btn {
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            color: #94a3b8;
-        }
-        .game-goods-section .goods-header .close-btn:hover {
-            color: #dc2626;
-        }
-        .game-goods-section .goods-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px 18px;
-            border-bottom: 1px solid #eef2f6;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        body.dark .game-goods-section .goods-item {
-            border-bottom-color: #2d2d44;
-        }
-        .game-goods-section .goods-item:last-child {
-            border-bottom: none;
-        }
-        .game-goods-section .goods-item .goods-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            flex: 1;
-        }
-        .game-goods-section .goods-item .goods-name {
-            font-weight: 500;
-            font-size: 15px;
-        }
-        .game-goods-section .goods-item .goods-desc {
-            font-size: 12px;
-            color: #94a3b8;
-        }
-        .game-goods-section .goods-item .goods-seller {
-            font-size: 11px;
-            color: #94a3b8;
-        }
-        .game-goods-section .goods-item .goods-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .game-goods-section .goods-item .goods-price {
-            font-weight: 700;
-            color: #3b82f6;
-            background: #eff6ff;
-            padding: 4px 14px;
-            border-radius: 40px;
-            font-size: 14px;
-        }
-        body.dark .game-goods-section .goods-item .goods-price {
-            background: #1a2a4a;
-            color: #60a5fa;
-        }
-        .game-goods-section .goods-item .buy-btn {
-            background: #3b82f6;
-            border: none;
-            color: white;
-            font-weight: 600;
-            padding: 6px 18px;
-            border-radius: 40px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .game-goods-section .goods-item .buy-btn:hover {
-            background: #2563eb;
-        }
-        .game-goods-section .goods-item .chat-seller-btn {
-            background: #10b981;
-            border: none;
-            color: white;
-            font-weight: 600;
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .game-goods-section .goods-item .chat-seller-btn:hover {
-            background: #059669;
-        }
+    /* ФИНАНСЫ */
+    .finance-balance {
+      background: #141e32;
+      border-radius: 24px;
+      padding: 24px;
+      border: 1px solid #2a3f6a;
+      text-align: center;
+      margin: 16px 0;
+    }
+    .finance-balance .amount {
+      font-size: 48px;
+      font-weight: 800;
+      color: #ffb3c6;
+    }
+    .finance-balance .amount i {
+      color: #ffb3c6;
+      font-size: 36px;
+      margin-right: 8px;
+    }
+    .finance-balance .label {
+      color: #8899bb;
+      font-size: 14px;
+      margin-top: 4px;
+    }
 
-        .goods-feed {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+    .finance-section {
+      background: #141e32;
+      border-radius: 24px;
+      padding: 20px;
+      border: 1px solid #2a3f6a;
+      margin: 12px 0;
+    }
+    .finance-section h4 {
+      margin-bottom: 12px;
+      color: #b0c4e0;
+    }
+    .finance-section .steps {
+      font-size: 14px;
+      color: #8899bb;
+      line-height: 1.8;
+      padding-left: 20px;
+    }
+    .finance-section .steps li {
+      margin-bottom: 4px;
+    }
+    .btn-telegram {
+      background: #0088cc;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 40px;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      transition: 0.3s;
+      margin-top: 12px;
+      font-size: 15px;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-telegram:hover {
+      background: #0099dd;
+      transform: scale(1.02);
+    }
+    .btn-telegram i {
+      margin-right: 8px;
+    }
 
-        .feed-item {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 14px 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            transition: 0.15s;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        body.dark .feed-item {
-            background: #1e1e32;
-        }
-        .feed-item:hover {
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        }
-        .feed-item .info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            flex: 1;
-        }
-        .feed-item .game-tag {
-            font-size: 11px;
-            font-weight: 600;
-            color: #3b82f6;
-            background: #eff6ff;
-            padding: 2px 12px;
-            border-radius: 40px;
-            display: inline-block;
-            width: fit-content;
-        }
-        body.dark .feed-item .game-tag {
-            background: #1a2a4a;
-            color: #60a5fa;
-        }
-        .feed-item .item-name {
-            font-size: 15px;
-            font-weight: 600;
-        }
-        .feed-item .item-desc {
-            font-size: 12px;
-            color: #94a3b8;
-        }
-        .feed-item .item-seller {
-            font-size: 11px;
-            color: #94a3b8;
-        }
-        .feed-item .item-price {
-            font-weight: 700;
-            color: #3b82f6;
-            background: #eff6ff;
-            padding: 4px 14px;
-            border-radius: 40px;
-            font-size: 14px;
-        }
-        body.dark .feed-item .item-price {
-            background: #1a2a4a;
-            color: #60a5fa;
-        }
-        .feed-item .item-price .old-price {
-            text-decoration: line-through;
-            color: #94a3b8;
-            font-weight: 400;
-            font-size: 12px;
-            margin-right: 4px;
-        }
-        .feed-item .item-actions {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        .feed-item .buy-btn {
-            background: #3b82f6;
-            border: none;
-            color: white;
-            font-weight: 600;
-            padding: 6px 18px;
-            border-radius: 40px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .feed-item .buy-btn:hover {
-            background: #2563eb;
-        }
-        .feed-item .chat-seller-btn {
-            background: #10b981;
-            border: none;
-            color: white;
-            font-weight: 600;
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .feed-item .chat-seller-btn:hover {
-            background: #059669;
-        }
-        .feed-item .status-pending {
-            font-size: 11px;
-            color: #f59e0b;
-            background: #fef3c7;
-            padding: 2px 12px;
-            border-radius: 40px;
-        }
-        body.dark .feed-item .status-pending {
-            background: #3a2a0a;
-            color: #fbbf24;
-        }
+    .withdraw-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+    .withdraw-grid .amount-btn {
+      background: #1a253b;
+      border: 1px solid #2a3f6a;
+      border-radius: 12px;
+      padding: 10px;
+      color: #b0c4e0;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .withdraw-grid .amount-btn:hover {
+      border-color: #ff4d6d;
+      background: #2a3f6a;
+    }
+    .withdraw-grid .amount-btn.active {
+      border-color: #ff4d6d;
+      background: #ff4d6d;
+      color: #fff;
+    }
+    .history-empty {
+      color: #5a6a8a;
+      text-align: center;
+      padding: 20px 0;
+    }
 
-        /* ============================================================ */
-        /*  МОДАЛЬНОЕ ОКНО ДЛЯ ПОКУПКИ                                  */
-        /* ============================================================ */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 999;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .modal-overlay.active {
-            display: flex;
-        }
-        .modal-box {
-            background: #ffffff;
-            border-radius: 24px;
-            padding: 32px 28px;
-            max-width: 420px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            animation: modalIn 0.3s ease;
-        }
-        body.dark .modal-box {
-            background: #1e1e32;
-        }
-        @keyframes modalIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.92);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        .modal-box h3 {
-            font-size: 22px;
-            margin-bottom: 6px;
-        }
-        .modal-box .modal-item {
-            font-size: 16px;
-            color: #64748b;
-            margin-bottom: 4px;
-        }
-        body.dark .modal-box .modal-item {
-            color: #94a3b8;
-        }
-        .modal-box .modal-price {
-            font-size: 28px;
-            font-weight: 800;
-            color: #3b82f6;
-            margin: 12px 0;
-        }
-        .modal-box .modal-price .old {
-            text-decoration: line-through;
-            color: #94a3b8;
-            font-size: 18px;
-            font-weight: 400;
-            margin-right: 8px;
-        }
-        .modal-box .modal-input {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 2px solid #e2e8f0;
-            background: #f8fafc;
-            font-size: 14px;
-            outline: none;
-            margin: 8px 0 12px 0;
-        }
-        body.dark .modal-box .modal-input {
-            background: #2a2a44;
-            border-color: #3a3a55;
-            color: #e2e8f0;
-        }
-        .modal-box .modal-input:focus {
-            border-color: #3b82f6;
-        }
-        .modal-box .modal-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-        }
-        .modal-box .modal-actions button {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 40px;
-            font-weight: 700;
-            font-size: 15px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .modal-box .modal-actions .btn-cancel {
-            background: #e2e8f0;
-            color: #475569;
-        }
-        .modal-box .modal-actions .btn-cancel:hover {
-            background: #cbd5e1;
-        }
-        .modal-box .modal-actions .btn-confirm {
-            background: #3b82f6;
-            color: #fff;
-        }
-        .modal-box .modal-actions .btn-confirm:hover {
-            background: #2563eb;
-        }
-        .modal-box .promo-applied {
-            background: #dcfce7;
-            color: #16a34a;
-            padding: 8px 14px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            margin: 6px 0;
-            display: none;
-        }
-        body.dark .modal-box .promo-applied {
-            background: #1a3a2a;
-            color: #4ade80;
-        }
-        .modal-box .promo-applied.show {
-            display: block;
-        }
+    /* ЧАТЫ */
+    .chat-list {
+      margin: 16px 0;
+    }
+    .chat-item {
+      background: #141e32;
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid #2a3f6a;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: 0.2s;
+      cursor: pointer;
+    }
+    .chat-item:hover {
+      border-color: #ff4d6d;
+    }
+    .chat-item .chat-info h4 {
+      font-size: 16px;
+    }
+    .chat-item .chat-info p {
+      font-size: 13px;
+      color: #5a6a8a;
+    }
+    .chat-item .chat-status {
+      font-size: 12px;
+      color: #5a6a8a;
+    }
 
-        /* ============================================================ */
-        /*  МОДАЛЬНОЕ ОКНО ОТЗЫВА                                       */
-        /* ============================================================ */
-        .review-modal .stars-select {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            margin: 12px 0;
-            font-size: 36px;
-            cursor: pointer;
-        }
-        .review-modal .stars-select span {
-            transition: 0.15s;
-            color: #cbd5e1;
-            user-select: none;
-        }
-        .review-modal .stars-select span.active {
-            color: #f59e0b;
-        }
-        .review-modal .stars-select span:hover {
-            transform: scale(1.2);
-        }
-        .review-modal .stars-label {
-            text-align: center;
-            font-size: 14px;
-            color: #94a3b8;
-            margin-bottom: 8px;
-        }
-        .review-modal textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 2px solid #e2e8f0;
-            background: #f8fafc;
-            font-size: 14px;
-            outline: none;
-            resize: vertical;
-            min-height: 80px;
-            font-family: inherit;
-        }
-        body.dark .review-modal textarea {
-            background: #2a2a44;
-            border-color: #3a3a55;
-            color: #e2e8f0;
-        }
-        .review-modal textarea:focus {
-            border-color: #3b82f6;
-        }
+    /* ПРОФИЛЬ */
+    .profile-card {
+      background: #141e32;
+      border-radius: 24px;
+      padding: 24px;
+      border: 1px solid #2a3f6a;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .profile-card .avatar-big {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #2a3f6a;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 700;
+      border: 3px solid #ff4d6d;
+    }
+    .profile-card .username {
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .profile-card .user-id {
+      color: #5a6a8a;
+      font-size: 13px;
+      margin-top: 2px;
+    }
+    .profile-card .edit-btn {
+      margin-top: 12px;
+      background: #1a253b;
+      border: none;
+      padding: 8px 24px;
+      border-radius: 30px;
+      color: #b0c4e0;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .profile-card .edit-btn:hover {
+      background: #2a3f6a;
+    }
 
-        /* ============================================================ */
-        /*  МОДАЛЬНОЕ ОКНО НАСТРОЕК ПРОФИЛЯ                            */
-        /* ============================================================ */
-        .settings-modal .settings-group {
-            margin-bottom: 16px;
-        }
-        .settings-modal .settings-group label {
-            display: block;
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 4px;
-        }
-        .settings-modal .settings-group .hint {
-            font-size: 12px;
-            color: #94a3b8;
-            margin-top: 2px;
-        }
-        .settings-modal .settings-group input {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 2px solid #e2e8f0;
-            background: #f8fafc;
-            font-size: 14px;
-            outline: none;
-        }
-        body.dark .settings-modal .settings-group input {
-            background: #2a2a44;
-            border-color: #3a3a55;
-            color: #e2e8f0;
-        }
-        .settings-modal .settings-group input:focus {
-            border-color: #3b82f6;
-        }
-        .settings-modal .settings-msg {
-            font-size: 14px;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 12px;
-        }
+    .profile-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin: 12px 0;
+    }
+    .profile-stats .stat {
+      background: #1a253b;
+      border-radius: 16px;
+      padding: 14px;
+      text-align: center;
+    }
+    .profile-stats .stat .num {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffb3c6;
+    }
+    .profile-stats .stat .label {
+      font-size: 12px;
+      color: #5a6a8a;
+    }
 
-        /* ============================================================ */
-        /*  ПРОДАТЬ                                                     */
-        /* ============================================================ */
-        .sell-container {
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        .sell-step {
-            background: #ffffff;
-            border-radius: 18px;
-            padding: 18px 22px;
-            margin-bottom: 14px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-        body.dark .sell-step {
-            background: #1e1e32;
-        }
-        .sell-step label {
-            font-weight: 600;
-            display: block;
-            margin-bottom: 6px;
-            font-size: 14px;
-        }
-        .sell-step select,
-        .sell-step input,
-        .sell-step textarea {
-            width: 100%;
-            padding: 10px 14px;
-            border-radius: 12px;
-            border: 2px solid #e2e8f0;
-            background: #f8fafc;
-            font-size: 14px;
-            outline: none;
-            transition: 0.15s;
-            font-family: inherit;
-        }
-        body.dark .sell-step select,
-        body.dark .sell-step input,
-        body.dark .sell-step textarea {
-            background: #2a2a44;
-            border-color: #3a3a55;
-            color: #e2e8f0;
-        }
-        .sell-step select:focus,
-        .sell-step input:focus,
-        .sell-step textarea:focus {
-            border-color: #3b82f6;
-        }
-        .sell-step textarea {
-            resize: vertical;
-            min-height: 60px;
-        }
-        .sell-submit-btn {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-            border: none;
-            padding: 14px;
-            width: 100%;
-            border-radius: 60px;
-            font-weight: 700;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .sell-submit-btn:hover {
-            opacity: 0.92;
-            transform: scale(1.01);
-        }
+    /* МОДАЛЬНОЕ ОКНО */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal {
+      background: #141e32;
+      border-radius: 28px;
+      padding: 32px 28px;
+      max-width: 440px;
+      width: 100%;
+      border: 1px solid #2a3f6a;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.8);
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .modal h3 {
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+    .modal .item-detail {
+      color: #8899bb;
+      margin-bottom: 16px;
+    }
+    .modal .price-detail {
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffb3c6;
+      margin-bottom: 20px;
+    }
+    .modal .price-detail i {
+      color: #ffb3c6;
+      margin-right: 6px;
+    }
+    .modal .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .modal .btn-group .btn-primary {
+      background: #ff4d6d;
+      border: none;
+      padding: 14px;
+      border-radius: 40px;
+      font-weight: 700;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .modal .btn-group .btn-primary:hover {
+      background: #ff6b8a;
+      transform: translateY(-2px);
+    }
+    .modal .btn-group .btn-secondary {
+      background: #1a253b;
+      border: none;
+      padding: 12px;
+      border-radius: 40px;
+      font-weight: 600;
+      color: #b0c4e0;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .modal .btn-group .btn-secondary:hover {
+      background: #2a3f6a;
+      color: #fff;
+    }
+    .modal .btn-group .btn-chat {
+      background: #0088cc;
+      border: none;
+      padding: 12px;
+      border-radius: 40px;
+      font-weight: 600;
+      color: #fff;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .modal .btn-group .btn-chat:hover {
+      background: #0099dd;
+    }
+    .modal .close-modal {
+      background: transparent;
+      border: none;
+      color: #5a6a8a;
+      font-size: 24px;
+      float: right;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .modal .close-modal:hover {
+      color: #ff4d6d;
+    }
+    .modal .feedback-section {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #1a253b;
+    }
+    .modal .feedback-section textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: #1a253b;
+      border: 1px solid #2a3f6a;
+      border-radius: 12px;
+      color: #e0e6f0;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 50px;
+      outline: none;
+    }
+    .modal .feedback-section textarea:focus {
+      border-color: #ff4d6d;
+    }
+    .modal .feedback-section .btn-feedback {
+      margin-top: 8px;
+      background: #2e9a6e;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 30px;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .modal .feedback-section .btn-feedback:hover {
+      background: #3ab07e;
+    }
 
-        /* ============================================================ */
-        /*  АДМИН-ПАНЕЛЬ                                                */
-        /* ============================================================ */
-        .admin-section {
-            max-width: 700px;
-            margin: 0 auto;
-        }
-        .admin-card {
-            background: #ffffff;
-            border-radius: 18px;
-            padding: 20px 22px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            border-left: 4px solid #3b82f6;
-        }
-        body.dark .admin-card {
-            background: #1e1e32;
-        }
-        .admin-card h4 {
-            font-size: 16px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .admin-card .admin-input {
-            width: 100%;
-            padding: 10px 14px;
-            border-radius: 10px;
-            border: 2px solid #e2e8f0;
-            background: #f8fafc;
-            font-size: 14px;
-            margin-bottom: 8px;
-            outline: none;
-        }
-        body.dark .admin-card .admin-input {
-            background: #2a2a44;
-            border-color: #3a3a55;
-            color: #e2e8f0;
-        }
-        .admin-card .admin-input:focus {
-            border-color: #3b82f6;
-        }
-        .admin-card .admin-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .admin-card .admin-row .admin-input {
-            flex: 1;
-            min-width: 120px;
-            margin-bottom: 0;
-        }
-        .admin-btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .admin-btn:hover {
-            background: #2563eb;
-        }
-        .admin-btn.green {
-            background: #16a34a;
-        }
-        .admin-btn.green:hover {
-            background: #15803d;
-        }
-        .admin-btn.red {
-            background: #dc2626;
-        }
-        .admin-btn.red:hover {
-            background: #b91c1c;
-        }
-        .admin-btn.orange {
-            background: #f59e0b;
-        }
-        .admin-btn.orange:hover {
-            background: #d97706;
-        }
-        .admin-btn.outline {
-            background: transparent;
-            border: 2px solid #dc2626;
-            color: #dc2626;
-        }
-        .admin-btn.outline:hover {
-            background: #dc2626;
-            color: #fff;
-        }
-
-        .color-picker {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin: 6px 0 10px 0;
-        }
-        .color-picker .color-option {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border: 3px solid transparent;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .color-picker .color-option:hover {
-            transform: scale(1.1);
-        }
-        .color-picker .color-option.active {
-            border-color: #1e293b;
-            box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1e293b;
-        }
-        body.dark .color-picker .color-option.active {
-            border-color: #e2e8f0;
-            box-shadow: 0 0 0 2px #1e1e32, 0 0 0 4px #e2e8f0;
-        }
-
-        .moderation-item {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        body.dark .moderation-item {
-            background: #2a2a44;
-        }
-        .moderation-item .mod-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .moderation-item .mod-info .mod-game {
-            font-size: 12px;
-            color: #94a3b8;
-        }
-        .moderation-item .mod-actions {
-            display: flex;
-            gap: 8px;
-        }
-        .moderation-item .mod-actions button {
-            padding: 4px 14px;
-            border: none;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 12px;
-            cursor: pointer;
-        }
-
-        .admin-goods-item {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        body.dark .admin-goods-item {
-            background: #2a2a44;
-        }
-        .admin-goods-item .goods-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .admin-goods-item .goods-info .goods-name {
-            font-weight: 600;
-        }
-        .admin-goods-item .goods-info .goods-meta {
-            font-size: 12px;
-            color: #94a3b8;
-        }
-
-        .promo-item {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        body.dark .promo-item {
-            background: #2a2a44;
-        }
-        .promo-item .promo-code {
-            font-weight: 700;
-            color: #3b82f6;
-            font-size: 16px;
-        }
-        .promo-item .promo-info {
-            font-size: 13px;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 10px 16px;
-            border-radius: 12px;
-            border: 2px solid #e2e8f0;
-            background: #f8fafc;
-            font-size: 14px;
-            outline: none;
-            margin-bottom: 12px;
-        }
-        body.dark .search-input {
-            background: #2a2a44;
-            border-color: #3a3a55;
-            color: #e2e8f0;
-        }
-        .search-input:focus {
-            border-color: #3b82f6;
-        }
-
-        .user-item {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        body.dark .user-item {
-            background: #2a2a44;
-        }
-        .user-item .user-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .user-item .user-info .user-name {
-            font-weight: 600;
-        }
-        .user-item .user-info .user-balance {
-            font-size: 13px;
-            color: #3b82f6;
-        }
-        .user-item .user-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .user-item .user-actions input {
-            width: 80px;
-            padding: 6px 10px;
-            border-radius: 10px;
-            border: 2px solid #e2e8f0;
-            background: #f8fafc;
-            font-size: 13px;
-            outline: none;
-        }
-        body.dark .user-item .user-actions input {
-            background: #2a2a44;
-            border-color: #3a3a55;
-            color: #e2e8f0;
-        }
-        .user-item .user-actions input:focus {
-            border-color: #3b82f6;
-        }
-        .user-item .user-actions .role-badge {
-            font-size: 11px;
-            background: #f59e0b;
-            color: #fff;
-            padding: 2px 12px;
-            border-radius: 40px;
-        }
-
-        /* ============================================================ */
-        /*  ЧАТЫ (список)                                               */
-        /* ============================================================ */
-        .chats-container {
-            max-width: 700px;
-            margin: 0 auto;
-        }
-        .chat-item {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 16px 18px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            cursor: pointer;
-            transition: 0.15s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        body.dark .chat-item {
-            background: #1e1e32;
-        }
-        .chat-item:hover {
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        }
-        .chat-item .chat-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            flex: 1;
-        }
-        .chat-item .chat-info .chat-with {
-            font-weight: 600;
-            font-size: 16px;
-        }
-        .chat-item .chat-info .chat-last {
-            font-size: 13px;
-            color: #94a3b8;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 200px;
-        }
-        .chat-item .chat-right {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 4px;
-        }
-        .chat-item .chat-time {
-            font-size: 11px;
-            color: #94a3b8;
-        }
-        .chat-item .chat-badge {
-            background: #3b82f6;
-            color: #fff;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-        }
-        .chat-item .chat-badge.read {
-            background: #94a3b8;
-        }
-
-        /* ============================================================ */
-        /*  ОКНО ЧАТА (полноэкранное)                                  */
-        /* ============================================================ */
-        .chat-window-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: #ffffff;
-            z-index: 2000;
-            flex-direction: column;
-            animation: slideIn 0.25s ease;
-        }
-        body.dark .chat-window-overlay {
-            background: #12121c;
-        }
-        .chat-window-overlay.active {
-            display: flex;
-        }
-        @keyframes slideIn {
-            0% {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            100% {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .chat-window-overlay .chat-header {
-            padding: 14px 18px;
-            font-weight: 700;
-            font-size: 16px;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: #f8fafc;
-            flex-shrink: 0;
-        }
-        body.dark .chat-window-overlay .chat-header {
-            background: #1a1a2e;
-            border-bottom-color: #2d2d44;
-        }
-        .chat-window-overlay .chat-header .back-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #3b82f6;
-            padding: 4px;
-        }
-        .chat-window-overlay .chat-header .back-btn:hover {
-            color: #2563eb;
-        }
-        .chat-window-overlay .chat-header .chat-title {
-            flex: 1;
-            font-size: 17px;
-        }
-        .chat-window-overlay .chat-header .chat-status {
-            font-size: 12px;
-            color: #16a34a;
-            font-weight: 400;
-            background: #dcfce7;
-            padding: 2px 12px;
-            border-radius: 40px;
-            display: inline-block;
-        }
-        body.dark .chat-window-overlay .chat-header .chat-status {
-            background: #1a3a2a;
-            color: #4ade80;
-        }
-
-        .chat-window-overlay .chat-messages {
-            flex: 1;
-            padding: 16px 18px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            background: #f8fafc;
-        }
-        body.dark .chat-window-overlay .chat-messages {
-            background: #0f0f1a;
-        }
-        .chat-window-overlay .chat-messages::-webkit-scrollbar {
-            width: 4px;
-        }
-        .chat-window-overlay .chat-messages::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 20px;
-        }
-        body.dark .chat-window-overlay .chat-messages::-webkit-scrollbar-thumb {
-            background: #3a3a55;
-        }
-
-        .chat-window-overlay .chat-messages .msg {
-            max-width: 75%;
-            padding: 10px 14px;
-            border-radius: 18px;
-            font-size: 15px;
-            line-height: 1.4;
-            word-wrap: break-word;
-            position: relative;
-        }
-        .chat-window-overlay .chat-messages .msg.me {
-            background: #3b82f6;
-            color: #fff;
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-        }
-        .chat-window-overlay .chat-messages .msg.other {
-            background: #ffffff;
-            color: #1e293b;
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-        body.dark .chat-window-overlay .chat-messages .msg.other {
-            background: #2a2a44;
-            color: #e2e8f0;
-        }
-        .chat-window-overlay .chat-messages .msg.system {
-            background: #dbeafe;
-            color: #1e40af;
-            align-self: center;
-            text-align: center;
-            max-width: 90%;
-            border-radius: 12px;
-            font-size: 13px;
-            padding: 12px 18px;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
-        }
-        body.dark .chat-window-overlay .chat-messages .msg.system {
-            background: #1a2a4a;
-            color: #60a5fa;
-        }
-
-        .chat-window-overlay .chat-messages .msg .msg-time {
-            font-size: 10px;
-            opacity: 0.6;
-            display: block;
-            margin-top: 4px;
-        }
-        .chat-window-overlay .chat-messages .msg .msg-status {
-            font-size: 12px;
-            margin-left: 6px;
-            opacity: 0.7;
-        }
-        .chat-window-overlay .chat-messages .msg.me .msg-status {
-            color: #93c5fd;
-        }
-        .chat-window-overlay .chat-messages .msg.me .msg-status.read {
-            color: #60a5fa;
-        }
-
-        .chat-window-overlay .chat-input-area {
-            display: flex;
-            gap: 10px;
-            padding: 12px 18px;
-            border-top: 1px solid #e9ecef;
-            background: #f8fafc;
-            flex-shrink: 0;
-        }
-        body.dark .chat-window-overlay .chat-input-area {
-            background: #1a1a2e;
-            border-top-color: #2d2d44;
-        }
-        .chat-window-overlay .chat-input-area input {
-            flex: 1;
-            padding: 10px 16px;
-            border-radius: 30px;
-            border: 2px solid #e2e8f0;
-            background: #ffffff;
-            font-size: 15px;
-            outline: none;
-        }
-        body.dark .chat-window-overlay .chat-input-area input {
-            background: #1e1e32;
-            border-color: #3a3a55;
-            color: #e2e8f0;
-        }
-        .chat-window-overlay .chat-input-area input:focus {
-            border-color: #3b82f6;
-        }
-        .chat-window-overlay .chat-input-area button {
-            background: #3b82f6;
-            color: #fff;
-            border: none;
-            padding: 10px 22px;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .chat-window-overlay .chat-input-area button:hover {
-            background: #2563eb;
-        }
-
-        /* ============================================================ */
-        /*  ФИНАНСЫ                                                     */
-        /* ============================================================ */
-        .balance-box {
-            background: linear-gradient(145deg, #3b82f6, #2563eb);
-            border-radius: 28px;
-            padding: 28px 24px;
-            color: white;
-            text-align: center;
-            max-width: 500px;
-            margin: 0 auto 20px auto;
-        }
-        .balance-box .stars {
-            font-size: 44px;
-            font-weight: 800;
-        }
-
-        .withdraw-section {
-            background: #ffffff;
-            border-radius: 18px;
-            padding: 20px 22px;
-            max-width: 500px;
-            margin: 0 auto 20px auto;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-        body.dark .withdraw-section {
-            background: #1e1e32;
-        }
-        .withdraw-section h4 {
-            margin-bottom: 12px;
-            font-size: 16px;
-        }
-        .withdraw-section .withdraw-input {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 2px solid #e2e8f0;
-            background: #f8fafc;
-            font-size: 14px;
-            margin-bottom: 10px;
-            outline: none;
-        }
-        body.dark .withdraw-section .withdraw-input {
-            background: #2a2a44;
-            border-color: #3a3a55;
-            color: #e2e8f0;
-        }
-        .withdraw-section .withdraw-input:focus {
-            border-color: #3b82f6;
-        }
-
-        .withdraw-presets {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-        .withdraw-presets .preset-btn {
-            padding: 6px 14px;
-            border-radius: 30px;
-            border: 2px solid #e2e8f0;
-            background: #f8fafc;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.15s;
-            color: #1e293b;
-        }
-        body.dark .withdraw-presets .preset-btn {
-            background: #2a2a44;
-            border-color: #3a3a55;
-            color: #e2e8f0;
-        }
-        .withdraw-presets .preset-btn:hover {
-            border-color: #3b82f6;
-            background: #eff6ff;
-        }
-        body.dark .withdraw-presets .preset-btn:hover {
-            background: #1a2a4a;
-            border-color: #60a5fa;
-        }
-        .withdraw-presets .preset-btn.active {
-            border-color: #3b82f6;
-            background: #eff6ff;
-            color: #3b82f6;
-        }
-        body.dark .withdraw-presets .preset-btn.active {
-            background: #1a2a4a;
-            border-color: #60a5fa;
-            color: #60a5fa;
-        }
-
-        .withdraw-section .withdraw-btn {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-            border: none;
-            border-radius: 60px;
-            font-weight: 700;
-            font-size: 15px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .withdraw-section .withdraw-btn:hover {
-            opacity: 0.92;
-        }
-
-        .withdraw-info {
-            text-align: center;
-            font-size: 12px;
-            color: #94a3b8;
-            margin-top: 8px;
-        }
-
-        .history-item {
-            background: #ffffff;
-            padding: 12px 18px;
-            border-radius: 14px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-        }
-        body.dark .history-item {
-            background: #1e1e32;
-        }
-        .history-item .amount.plus {
-            color: #16a34a;
-        }
-        .history-item .amount.minus {
-            color: #dc2626;
-        }
-
-        /* ============================================================ */
-        /*  ПРОФИЛЬ — БАННЕР, КОМИССИЯ, ПОПОЛНЕНИЕ                      */
-        /* ============================================================ */
-        .profile-card {
-            max-width: 400px;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .profile-banner {
-            display: block;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            border-radius: 18px;
-            padding: 16px 20px;
-            margin-bottom: 16px;
-            text-decoration: none;
-            color: #fff;
-            transition: 0.2s;
-            cursor: pointer;
-            text-align: left;
-        }
-        .profile-banner:hover {
-            transform: scale(1.01);
-            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
-        }
-        .banner-content {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .banner-icon {
-            font-size: 32px;
-            flex-shrink: 0;
-        }
-        .banner-text {
-            flex: 1;
-        }
-        .banner-title {
-            font-size: 16px;
-            font-weight: 700;
-        }
-        .banner-desc {
-            font-size: 13px;
-            opacity: 0.9;
-        }
-        .banner-arrow {
-            font-size: 24px;
-            opacity: 0.7;
-        }
-
-        .profile-commission {
-            background: #ffffff;
-            border-radius: 18px;
-            padding: 16px 20px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            border-left: 4px solid #f59e0b;
-            text-align: left;
-        }
-        body.dark .profile-commission {
-            background: #1e1e32;
-        }
-        .commission-icon {
-            font-size: 28px;
-            flex-shrink: 0;
-        }
-        .commission-text {
-            flex: 1;
-        }
-        .commission-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: #1e293b;
-        }
-        body.dark .commission-title {
-            color: #e2e8f0;
-        }
-        .commission-desc {
-            font-size: 13px;
-            color: #64748b;
-        }
-        body.dark .commission-desc {
-            color: #94a3b8;
-        }
-        .commission-example {
-            font-size: 13px;
-            color: #3b82f6;
-            margin-top: 2px;
-            font-weight: 500;
-        }
-        body.dark .commission-example {
-            color: #60a5fa;
-        }
-
-        .profile-deposit {
-            background: #ffffff;
-            border-radius: 18px;
-            padding: 16px 20px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            border-left: 4px solid #16a34a;
-            text-align: left;
-        }
-        body.dark .profile-deposit {
-            background: #1e1e32;
-        }
-        .deposit-icon {
-            font-size: 28px;
-            flex-shrink: 0;
-        }
-        .deposit-text {
-            flex: 1;
-        }
-        .deposit-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: #1e293b;
-        }
-        body.dark .deposit-title {
-            color: #e2e8f0;
-        }
-        .deposit-desc {
-            font-size: 13px;
-            color: #64748b;
-        }
-        body.dark .deposit-desc {
-            color: #94a3b8;
-        }
-        .deposit-desc strong {
-            color: #3b82f6;
-        }
-        body.dark .deposit-desc strong {
-            color: #60a5fa;
-        }
-
-        .profile-instruction {
-            background: #ffffff;
-            border-radius: 18px;
-            padding: 18px 20px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            border: 2px solid #e2e8f0;
-            text-align: left;
-        }
-        body.dark .profile-instruction {
-            background: #1e1e32;
-            border-color: #2d2d44;
-        }
-        .instruction-title {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            color: #1e293b;
-        }
-        body.dark .instruction-title {
-            color: #e2e8f0;
-        }
-        .instruction-steps {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 14px;
-        }
-        .step {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            color: #1e293b;
-        }
-        body.dark .step {
-            color: #e2e8f0;
-        }
-        .step-num {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: #3b82f6;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-        .step-text strong {
-            color: #3b82f6;
-        }
-        body.dark .step-text strong {
-            color: #60a5fa;
-        }
-        .instruction-btn {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: #fff;
-            border: none;
-            border-radius: 60px;
-            font-weight: 700;
-            font-size: 15px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .instruction-btn:hover {
-            opacity: 0.92;
-            transform: scale(1.01);
-        }
-
-        .profile-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            margin: 0 auto 8px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            font-weight: 700;
-            color: white;
-        }
-        .profile-name-wrap {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .profile-name {
-            font-size: 22px;
-            font-weight: 700;
-        }
-        .profile-settings-btn {
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            color: #94a3b8;
-            padding: 4px 8px;
-            border-radius: 30px;
-            transition: 0.15s;
-        }
-        .profile-settings-btn:hover {
-            background: rgba(59, 130, 246, 0.1);
-            color: #3b82f6;
-        }
-        .profile-username {
-            color: #94a3b8;
-            font-size: 14px;
-            margin-bottom: 16px;
-        }
-
-        .profile-item {
-            background: #ffffff;
-            padding: 14px 18px;
-            border-radius: 14px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.15s;
-            flex-wrap: wrap;
-            gap: 8px;
-            text-align: left;
-        }
-        body.dark .profile-item {
-            background: #1e1e32;
-        }
-        .profile-item:hover {
-            background: #f1f5f9;
-        }
-        body.dark .profile-item:hover {
-            background: #2a2a44;
-        }
-        .profile-item .promo-input-group {
-            display: flex;
-            gap: 8px;
-            flex: 1;
-            min-width: 200px;
-        }
-        .profile-item .promo-input-group input {
-            flex: 1;
-            padding: 8px 14px;
-            border-radius: 30px;
-            border: 2px solid #e2e8f0;
-            background: #f8fafc;
-            font-size: 14px;
-            outline: none;
-        }
-        body.dark .profile-item .promo-input-group input {
-            background: #2a2a44;
-            border-color: #3a3a55;
-            color: #e2e8f0;
-        }
-        .profile-item .promo-input-group input:focus {
-            border-color: #3b82f6;
-        }
-        .profile-item .promo-input-group button {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 13px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .profile-item .promo-input-group button:hover {
-            background: #2563eb;
-        }
-
-        /* ============================================================ */
-        /*  НИЖНЯЯ ПАНЕЛЬ                                               */
-        /* ============================================================ */
-        .bottom-nav {
-            flex-shrink: 0;
-            display: flex;
-            justify-content: center;
-            gap: 6px;
-            padding: 10px 16px 14px 16px;
-            background: #ffffff;
-            border-top: 1px solid #e9ecef;
-            position: sticky;
-            bottom: 0;
-            z-index: 100;
-            flex-wrap: wrap;
-        }
-        body.dark .bottom-nav {
-            background: #1a1a2e;
-            border-top-color: #2d2d44;
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 11px;
-            color: #94a3b8;
-            cursor: pointer;
-            padding: 4px 14px;
-            border-radius: 40px;
-            transition: 0.15s;
-            background: transparent;
-            border: none;
-            gap: 1px;
-            font-weight: 500;
-        }
-        .nav-item .nav-icon {
-            font-size: 20px;
-            line-height: 1;
-        }
-        .nav-item:hover {
-            background: rgba(59, 130, 246, 0.06);
-        }
-        .nav-item.active {
-            color: #3b82f6;
-            font-weight: 600;
-            background: rgba(59, 130, 246, 0.10);
-        }
-        .nav-item.hidden {
-            display: none;
-        }
-
-        @media (max-width: 640px) {
-            .app-wrapper {
-                padding: 0 12px;
-            }
-            .header h1 {
-                font-size: 20px;
-            }
-            .header {
-                padding: 10px 0 8px 0;
-            }
-            .main-content {
-                padding: 10px 0 14px 0;
-            }
-            .games-grid {
-                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-                gap: 10px;
-            }
-            .game-card {
-                padding: 12px 8px;
-            }
-            .game-card .game-avatar {
-                width: 38px;
-                height: 38px;
-                font-size: 14px;
-            }
-            .game-card h4 {
-                font-size: 12px;
-            }
-            .feed-item {
-                flex-wrap: wrap;
-                gap: 6px;
-                padding: 12px 14px;
-            }
-            .feed-item .info {
-                width: 100%;
-            }
-            .feed-item .item-actions {
-                width: 100%;
-            }
-            .feed-item .buy-btn {
-                flex: 1;
-            }
-            .feed-item .chat-seller-btn {
-                flex: 1;
-            }
-            .game-goods-section .goods-item {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .game-goods-section .goods-item .goods-actions {
-                justify-content: flex-start;
-            }
-            .bottom-nav {
-                gap: 2px;
-                padding: 6px 6px 10px 6px;
-            }
-            .nav-item {
-                padding: 4px 8px;
-                font-size: 10px;
-            }
-            .nav-item .nav-icon {
-                font-size: 16px;
-            }
-            .admin-card {
-                padding: 14px 16px;
-            }
-            .admin-card .admin-row {
-                flex-direction: column;
-            }
-            .admin-card .admin-row .admin-input {
-                margin-bottom: 8px;
-            }
-            .moderation-item {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .moderation-item .mod-actions {
-                justify-content: flex-end;
-            }
-            .modal-box {
-                padding: 24px 20px;
-            }
-            .profile-item .promo-input-group {
-                flex-direction: column;
-                margin-left: 0;
-                margin-top: 8px;
-            }
-            .game-goods-section .goods-item {
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-            .game-goods-section .goods-item .buy-btn {
-                margin-left: 0;
-            }
-            .user-item {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .user-item .user-actions {
-                flex-wrap: wrap;
-            }
-            .chat-item .chat-info .chat-last {
-                max-width: 120px;
-            }
-            .withdraw-presets .preset-btn {
-                padding: 4px 10px;
-                font-size: 12px;
-            }
-            .banner-content {
-                flex-wrap: wrap;
-            }
-            .banner-arrow {
-                display: none;
-            }
-            .profile-commission {
-                flex-wrap: wrap;
-            }
-            .profile-deposit {
-                flex-wrap: wrap;
-            }
-            .step {
-                font-size: 13px;
-            }
-        }
-    </style>
+    /* АДАПТИВ */
+    @media (max-width: 600px) {
+      .hero h2 { font-size: 22px; }
+      .games-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+      .items-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+      .finance-balance .amount { font-size: 36px; }
+      .profile-stats { grid-template-columns: 1fr 1fr; }
+      .bottom-nav a { font-size: 10px; padding: 4px 8px; }
+      .bottom-nav a i { font-size: 18px; }
+      .modal { padding: 24px 18px; }
+    }
+    @media (max-width: 400px) {
+      .games-grid { grid-template-columns: 1fr 1fr; }
+      .items-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
 </head>
-<body class="light">
+<body>
 
-    <!-- ============================================================ -->
-    <!--  ЭКРАН РЕГИСТРАЦИИ / ВХОДА                                    -->
-    <!-- ============================================================ -->
-    <div class="auth-overlay active" id="authOverlay">
-        <div class="auth-box">
-            <h2>🔥 Rubi</h2>
-            <div class="subtitle">Войдите или создайте аккаунт</div>
-            <div class="auth-error" id="authError"></div>
-            <input class="auth-input" id="authLogin" placeholder="Имя пользователя" />
-            <input class="auth-input" id="authPassword" placeholder="Пароль" type="password" />
-            <button class="auth-btn" id="authBtn">Войти</button>
-            <div class="auth-switch">
-                Нет аккаунта? <span id="authSwitchBtn">Зарегистрироваться</span>
-            </div>
-        </div>
+  <!-- HEADER -->
+  <header>
+    <div class="container header-inner">
+      <a href="#" class="logo" onclick="showPage('main')">
+        <i class="fas fa-gem"></i> Ruby
+      </a>
+      <div class="header-user">
+        <div class="balance"><i class="fas fa-gem"></i> 0</div>
+        <div class="avatar" onclick="showPage('profile')">R</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- СТРАНИЦЫ -->
+  <main class="container">
+
+    <!-- ===== ГЛАВНАЯ ===== -->
+    <div id="page-main" class="page">
+      <div class="hero">
+        <h2><i class="fas fa-fire"></i> Ruby Shop</h2>
+        <p>Покупай и продавай игровые товары за рубины 💎</p>
+        <button class="btn-shop" onclick="showPage('sell')"><i class="fas fa-plus-circle"></i> Продать товар</button>
+      </div>
+
+      <div class="section-header">
+        <h3><i class="fas fa-gamepad"></i> Игры</h3>
+        <a href="#" onclick="filterCategory('games')">Все игры →</a>
+      </div>
+      <div class="games-grid" id="games-grid"></div>
+
+      <div class="section-header">
+        <h3><i class="fas fa-mobile-alt"></i> Приложения</h3>
+        <a href="#" onclick="filterCategory('apps')">Все приложения →</a>
+      </div>
+      <div class="games-grid" id="apps-grid"></div>
     </div>
 
-    <!-- ============================================================ -->
-    <!--  ОСНОВНОЕ ПРИЛОЖЕНИЕ                                          -->
-    <!-- ============================================================ -->
-    <div class="app-wrapper" id="appWrapper" style="display:none;">
-
-        <!-- ===== ШАПКА ===== -->
-        <header class="header">
-            <h1>🔥 Rubi</h1>
-            <div class="header-actions">
-                <span class="user-badge" id="userBadge">👤 User</span>
-                <button class="theme-toggle" id="themeToggle">🌙</button>
-                <button class="logout-btn" id="logoutBtn" title="Выйти">🚪</button>
-            </div>
-        </header>
-
-        <!-- ===== ОСНОВНОЙ КОНТЕНТ ===== -->
-        <div class="main-content" id="mainContent">
-
-            <!-- ===== ГЛАВНАЯ ===== -->
-            <div class="page active" id="pageHome">
-                <div class="section-title">🎯 Игры и приложения</div>
-                <div class="games-grid" id="gamesGrid"></div>
-                <div id="gameGoodsContainer"></div>
-                <div class="section-title" style="margin-top:24px;">🔥 Популярные товары</div>
-                <div class="goods-feed" id="goodsFeed"></div>
-            </div>
-
-            <!-- ===== ПРОДАТЬ ===== -->
-            <div class="page" id="pageSell">
-                <div class="sell-container">
-                    <div class="sell-step">
-                        <label>1. Выберите игру или приложение</label>
-                        <select id="sellGameSelect"></select>
-                    </div>
-                    <div class="sell-step">
-                        <label>2. Выберите товар</label>
-                        <select id="sellItemSelect">
-                            <option value="">— сначала выберите игру —</option>
-                        </select>
-                    </div>
-                    <div class="sell-step">
-                        <label>3. Описание товара</label>
-                        <textarea id="sellDescInput" placeholder="Опишите товар (состояние, особенности и т.д.)"></textarea>
-                    </div>
-                    <div class="sell-step">
-                        <label>4. Ваша цена (⭐)</label>
-                        <input type="number" id="sellPriceInput" placeholder="Например: 50" min="1" />
-                    </div>
-                    <button class="sell-submit-btn" id="sellSubmitBtn">➕ Выставить на продажу</button>
-
-                    <div style="margin-top:24px;">
-                        <h4 style="margin-bottom:10px;">📦 Ваши товары</h4>
-                        <div id="userLots"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ===== АДМИН-ПАНЕЛЬ ===== -->
-            <div class="page" id="pageAdmin">
-                <div class="admin-section">
-                    <h3 style="margin-bottom:16px;">⚙️ Админ-панель</h3>
-
-                    <div class="admin-card">
-                        <h4>➕ Добавить игру или приложение</h4>
-                        <input class="admin-input" id="adminGameName" placeholder="Название игры/приложения" />
-                        <label style="font-size:13px;font-weight:500;margin-bottom:4px;display:block;">Выберите цвет</label>
-                        <div class="color-picker" id="colorPicker">
-                            <div class="color-option active" style="background:#3b82f6;" data-color="#3b82f6"></div>
-                            <div class="color-option" style="background:#ef4444;" data-color="#ef4444"></div>
-                            <div class="color-option" style="background:#10b981;" data-color="#10b981"></div>
-                            <div class="color-option" style="background:#8b5cf6;" data-color="#8b5cf6"></div>
-                            <div class="color-option" style="background:#f59e0b;" data-color="#f59e0b"></div>
-                            <div class="color-option" style="background:#ec4899;" data-color="#ec4899"></div>
-                            <div class="color-option" style="background:#06b6d4;" data-color="#06b6d4"></div>
-                            <div class="color-option" style="background:#ee5a24;" data-color="#ee5a24"></div>
-                        </div>
-                        <button class="admin-btn" id="adminAddGameBtn">Добавить</button>
-                    </div>
-
-                    <div class="admin-card">
-                        <h4>📦 Добавить товар для игры</h4>
-                        <select class="admin-input" id="adminGameSelect"></select>
-                        <input class="admin-input" id="adminItemName" placeholder="Название товара" />
-                        <button class="admin-btn" id="adminAddItemBtn">Добавить товар</button>
-                    </div>
-
-                    <div class="admin-card" style="border-left-color:#10b981;">
-                        <h4>🔥 Управление популярными товарами</h4>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-                            <select class="admin-input" id="adminGoodsGameSelect" style="flex:1;min-width:120px;">
-                                <option value="">— выберите игру —</option>
-                            </select>
-                            <select class="admin-input" id="adminGoodsItemSelect" style="flex:1;min-width:120px;">
-                                <option value="">— выберите товар —</option>
-                            </select>
-                            <button class="admin-btn green" id="adminAddGoodsBtn">➕ Добавить</button>
-                        </div>
-                        <div id="adminGoodsList"></div>
-                    </div>
-
-                    <div class="admin-card" style="border-left-color:#f59e0b;">
-                        <h4>🛂 Модерация товаров</h4>
-                        <div id="moderationList"></div>
-                    </div>
-
-                    <div class="admin-card" style="border-left-color:#8b5cf6;">
-                        <h4>💳 Заявки на вывод</h4>
-                        <div id="withdrawRequestsList"></div>
-                    </div>
-
-                    <div class="admin-card" style="border-left-color:#16a34a;">
-                        <h4>🎫 Промокоды</h4>
-                        <div class="admin-row">
-                            <input class="admin-input" id="promoCode" placeholder="Код" />
-                            <input class="admin-input" id="promoValue" placeholder="Скидка % или бонус ⭐" />
-                            <input class="admin-input" id="promoLimit" placeholder="Лимит" style="max-width:80px;" />
-                        </div>
-                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
-                            <input class="admin-input" id="promoExpires" placeholder="Действует до: 2026-12-31" style="flex:1;min-width:150px;" />
-                            <select class="admin-input" id="promoType" style="flex:1;min-width:100px;">
-                                <option value="percent">Скидка %</option>
-                                <option value="bonus">Бонус ⭐</option>
-                            </select>
-                            <select class="admin-input" id="promoGameSelect" style="flex:1;min-width:120px;">
-                                <option value="">На все игры</option>
-                            </select>
-                            <button class="admin-btn green" id="adminAddPromoBtn">Создать</button>
-                        </div>
-                        <div style="margin-top:12px;" id="promoList"></div>
-                    </div>
-
-                    <div class="admin-card" style="border-left-color:#3b82f6;">
-                        <h4>👥 Пользователи</h4>
-                        <input class="search-input" id="userSearchInput" placeholder="🔍 Поиск пользователей..." />
-                        <div id="usersList"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ===== ЧАТЫ ===== -->
-            <div class="page" id="pageChats">
-                <div class="chats-container">
-                    <h3 style="margin-bottom:16px;">💬 Мои чаты</h3>
-                    <div id="chatsList"></div>
-                </div>
-            </div>
-
-            <!-- ===== ФИНАНСЫ ===== -->
-            <div class="page" id="pageFinance">
-                <div class="balance-box">
-                    <div style="font-size:14px;opacity:0.9;">Ваш баланс</div>
-                    <div class="stars" id="balanceDisplay">⭐ 0</div>
-                </div>
-
-                <div class="withdraw-section">
-                    <h4>💳 Вывод звёзд</h4>
-                    <input class="withdraw-input" id="withdrawTg" placeholder="@username (ваш Telegram)" />
-                    <input class="withdraw-input" id="withdrawAmount" placeholder="Сумма" type="number" min="100" />
-                    <div class="withdraw-presets" id="withdrawPresets">
-                        <button class="preset-btn" data-amount="100">100</button>
-                        <button class="preset-btn" data-amount="115">115</button>
-                        <button class="preset-btn" data-amount="125">125</button>
-                        <button class="preset-btn" data-amount="150">150</button>
-                        <button class="preset-btn" data-amount="175">175</button>
-                        <button class="preset-btn" data-amount="200">200</button>
-                        <button class="preset-btn" data-amount="250">250</button>
-                        <button class="preset-btn" data-amount="300">300</button>
-                        <button class="preset-btn" data-amount="500">500</button>
-                        <button class="preset-btn" data-amount="1000">1000</button>
-                        <button class="preset-btn" data-amount="2000">2000</button>
-                        <button class="preset-btn" data-amount="5000">5000</button>
-                        <button class="preset-btn" data-amount="10000">10000</button>
-                    </div>
-                    <button class="withdraw-btn" id="withdrawBtn">📤 Отправить заявку</button>
-                    <div class="withdraw-info">Минимальная сумма: 100 ⭐ • Максимальная: 10 000 ⭐</div>
-                </div>
-
-                <h4 style="margin-bottom:12px;">📜 История операций</h4>
-                <div id="historyList"></div>
-            </div>
-
-            <!-- ===== ПРОФИЛЬ ===== -->
-            <div class="page" id="pageProfile">
-                <div class="profile-card">
-
-                    <a href="https://t.me/rubishopgame" target="_blank" class="profile-banner">
-                        <div class="banner-content">
-                            <div class="banner-icon">📢</div>
-                            <div class="banner-text">
-                                <div class="banner-title">Rubi Shop — наш канал</div>
-                                <div class="banner-desc">Промокоды, новости, акции и розыгрыши!</div>
-                            </div>
-                            <div class="banner-arrow">→</div>
-                        </div>
-                    </a>
-
-                    <div class="profile-commission">
-                        <div class="commission-icon">💸</div>
-                        <div class="commission-text">
-                            <div class="commission-title">Комиссия платформы</div>
-                            <div class="commission-desc">При продаже товара мы забираем <strong>10%</strong> от суммы</div>
-                            <div class="commission-example">Пример: выставили товар за <strong>100 ⭐</strong> → получите <strong>90 ⭐</strong></div>
-                        </div>
-                    </div>
-
-                    <div class="profile-deposit">
-                        <div class="deposit-icon">💰</div>
-                        <div class="deposit-text">
-                            <div class="deposit-title">Пополнить баланс</div>
-                            <div class="deposit-desc">Отправьте Telegram Stars на <strong>@vmvmvq</strong></div>
-                        </div>
-                    </div>
-
-                    <div class="profile-instruction">
-                        <div class="instruction-title">📖 Как пополнить баланс:</div>
-                        <div class="instruction-steps">
-                            <div class="step">
-                                <span class="step-num">1</span>
-                                <span class="step-text">Нажмите <strong>«Написать»</strong> и перейдите в ЛС к <strong>@vmvmvq</strong></span>
-                            </div>
-                            <div class="step">
-                                <span class="step-num">2</span>
-                                <span class="step-text">Отправьте <strong>подарок</strong> (Telegram Stars) на нужную сумму</span>
-                            </div>
-                            <div class="step">
-                                <span class="step-num">3</span>
-                                <span class="step-text">Напишите свой <strong>никнейм</strong> из Rubi в сообщении</span>
-                            </div>
-                            <div class="step">
-                                <span class="step-num">4</span>
-                                <span class="step-text">Дождитесь пополнения — баланс придёт автоматически!</span>
-                            </div>
-                        </div>
-                        <button class="instruction-btn" onclick="window.open('https://t.me/vmvmvq', '_blank')">
-                            ✉️ Написать @vmvmvq
-                        </button>
-                    </div>
-
-                    <div class="profile-avatar" id="profileAvatar">R</div>
-                    <div class="profile-name-wrap">
-                        <span class="profile-name" id="profileName">Rubi</span>
-                        <button class="profile-settings-btn" id="profileSettingsBtn" title="Настройки профиля">⚙️</button>
-                    </div>
-                    <div class="profile-username" id="profileUsername">@username</div>
-
-                    <div class="profile-item" style="flex-direction:column;align-items:stretch;gap:8px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <span>🎫 Активировать промокод</span>
-                            <span style="font-size:12px;color:#94a3b8;">Получи бонус ⭐</span>
-                        </div>
-                        <div class="promo-input-group">
-                            <input type="text" id="profilePromoInput" placeholder="Введите промокод" />
-                            <button id="profilePromoBtn">Активировать</button>
-                        </div>
-                        <div id="profilePromoMessage" style="font-size:13px;font-weight:600;"></div>
-                    </div>
-
-                    <div class="profile-item" id="themeProfileToggle">🌓 Тема: Светлая <span>→</span></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ===== НИЖНЯЯ ПАНЕЛЬ ===== -->
-        <nav class="bottom-nav" id="bottomNav">
-            <button class="nav-item active" data-page="pageHome"><span class="nav-icon">🏠</span> Главная</button>
-            <button class="nav-item" data-page="pageSell"><span class="nav-icon">💸</span> Продать</button>
-            <button class="nav-item admin-only hidden" data-page="pageAdmin"><span class="nav-icon">⚙️</span> Админ</button>
-            <button class="nav-item" data-page="pageChats"><span class="nav-icon">💬</span> Чаты</button>
-            <button class="nav-item" data-page="pageFinance"><span class="nav-icon">📊</span> Финансы</button>
-            <button class="nav-item" data-page="pageProfile"><span class="nav-icon">👤</span> Профиль</button>
-        </nav>
+    <!-- ===== ТОВАРЫ ===== -->
+    <div id="page-items" class="page hidden">
+      <button class="back-btn" onclick="showPage('main')"><i class="fas fa-arrow-left"></i> Назад</button>
+      <h2 id="items-title" style="margin-bottom: 12px;">Название</h2>
+      <div class="items-grid" id="items-grid"></div>
     </div>
 
-    <!-- ===== МОДАЛЬНОЕ ОКНО ПОКУПКИ ===== -->
-    <div class="modal-overlay" id="buyModal">
-        <div class="modal-box">
-            <h3>🛒 Подтверждение покупки</h3>
-            <div class="modal-item" id="modalItemName">Товар</div>
-            <div class="modal-price" id="modalPriceDisplay">
-                <span class="old" id="modalOldPrice"></span>
-                <span id="modalFinalPrice">⭐ 0</span>
-            </div>
-            <div class="promo-applied" id="modalPromoApplied">✅ Промокод активирован!</div>
-            <input class="modal-input" id="modalPromoInput" placeholder="Введите промокод для скидки" />
-            <button class="admin-btn" id="modalApplyPromoBtn" style="width:100%;margin-bottom:8px;">Применить промокод</button>
-            <div class="modal-actions">
-                <button class="btn-cancel" id="modalCancelBtn">Отмена</button>
-                <button class="btn-confirm" id="modalConfirmBtn">✅ Подтвердить</button>
-            </div>
+    <!-- ===== ПРОДАТЬ ===== -->
+    <div id="page-sell" class="page hidden">
+      <button class="back-btn" onclick="showPage('main')"><i class="fas fa-arrow-left"></i> Назад</button>
+      <h2 style="margin-bottom: 16px;"><i class="fas fa-plus-circle" style="color:#ff4d6d;"></i> Выставить на продажу</h2>
+      <div class="sell-form">
+        <div class="form-group">
+          <label>1. Выберите игру или приложение</label>
+          <select id="sell-category"><option value="">— выберите —</option></select>
         </div>
+        <div class="form-group">
+          <label>2. Выберите товар</label>
+          <select id="sell-item"><option value="">— сначала выберите игру —</option></select>
+        </div>
+        <div class="form-group">
+          <label>3. Описание товара</label>
+          <textarea id="sell-desc" placeholder="Опишите товар (состояние, особенности и т.д.)"></textarea>
+        </div>
+        <div class="form-group">
+          <label>4. Ваша цена (💎)</label>
+          <input type="number" id="sell-price" placeholder="Например: 50">
+        </div>
+        <button class="btn-sell" onclick="sellItem()"><i class="fas fa-check-circle"></i> Выставить на продажу</button>
+      </div>
+      <div class="my-items">
+        <h4>Ваши товары</h4>
+        <div id="my-items-list" class="empty">Нет товаров</div>
+      </div>
     </div>
 
-    <!-- ===== МОДАЛЬНОЕ ОКНО ОТЗЫВА ===== -->
-    <div class="modal-overlay review-modal" id="reviewModal">
-        <div class="modal-box">
-            <h3>⭐ Оставить отзыв</h3>
-            <div style="text-align:center;color:#94a3b8;font-size:14px;margin-bottom:4px;" id="reviewItemName">Товар</div>
-            <div class="stars-label" id="reviewStarsLabel">Выберите оценку</div>
-            <div class="stars-select" id="reviewStars">
-                <span data-star="1">⭐</span>
-                <span data-star="2">⭐</span>
-                <span data-star="3">⭐</span>
-                <span data-star="4">⭐</span>
-                <span data-star="5">⭐</span>
-            </div>
-            <textarea id="reviewText" placeholder="Напишите ваш отзыв..."></textarea>
-            <div class="modal-actions">
-                <button class="btn-cancel" id="reviewCancelBtn">Пропустить</button>
-                <button class="btn-confirm" id="reviewSubmitBtn">✅ Отправить</button>
-            </div>
+    <!-- ===== ФИНАНСЫ ===== -->
+    <div id="page-finance" class="page hidden">
+      <button class="back-btn" onclick="showPage('main')"><i class="fas fa-arrow-left"></i> Назад</button>
+      <h2 style="margin-bottom: 16px;"><i class="fas fa-wallet" style="color:#ff4d6d;"></i> Финансы</h2>
+      <div class="finance-balance">
+        <div class="amount"><i class="fas fa-gem"></i> 0</div>
+        <div class="label">Ваш баланс</div>
+      </div>
+      <div class="finance-section">
+        <h4><i class="fas fa-arrow-up" style="color:#2e9a6e;"></i> Пополнить баланс</h4>
+        <p style="color:#8899bb; font-size:14px; margin-bottom:10px;">Отправьте Telegram Stars на <strong style="color:#fff;">@vmvmvq</strong></p>
+        <ol class="steps">
+          <li>Нажмите «Написать» и перейдите в ЛС к <strong>@vmvmvq</strong></li>
+          <li>Отправьте подарок (Telegram Stars) на нужную сумму</li>
+          <li>Напишите свой <strong>никнейм</strong> из Ruby в сообщении</li>
+          <li>Дождитесь пополнения — баланс придёт автоматически!</li>
+        </ol>
+        <a href="https://t.me/vmvmvq" target="_blank" class="btn-telegram"><i class="fab fa-telegram-plane"></i> Написать @vmvmvq</a>
+      </div>
+      <div class="finance-section">
+        <h4><i class="fas fa-arrow-down" style="color:#ff4d6d;"></i> Вывод звёзд</h4>
+        <div style="margin: 10px 0;">
+          <span style="color:#8899bb; font-size:13px;">@username (ваш Telegram)</span>
+          <input type="text" style="width:100%; padding:10px 14px; background:#1a253b; border:1px solid #2a3f6a; border-radius:12px; color:#e0e6f0; margin-top:4px;" placeholder="Введите ваш Telegram username">
         </div>
+        <div class="withdraw-grid">
+          <div class="amount-btn">100</div><div class="amount-btn">115</div><div class="amount-btn">125</div>
+          <div class="amount-btn">150</div><div class="amount-btn">175</div><div class="amount-btn">200</div>
+          <div class="amount-btn">250</div><div class="amount-btn">300</div><div class="amount-btn">500</div>
+          <div class="amount-btn">1000</div><div class="amount-btn">2000</div><div class="amount-btn">5000</div>
+          <div class="amount-btn">10000</div>
+        </div>
+        <button class="btn-sell" style="margin-top:10px;">Отправить заявку</button>
+        <p style="color:#5a6a8a; font-size:13px; margin-top:8px;">Минимальная сумма: 100 ★ · Максимальная: 10 000 ★</p>
+      </div>
+      <div class="finance-section">
+        <h4>История операций</h4>
+        <div class="history-empty">История пуста</div>
+      </div>
     </div>
 
-    <!-- ===== МОДАЛЬНОЕ ОКНО НАСТРОЕК ПРОФИЛЯ ===== -->
-    <div class="modal-overlay settings-modal" id="settingsModal">
-        <div class="modal-box">
-            <h3>⚙️ Настройки профиля</h3>
-            <div class="settings-msg" id="settingsMsg"></div>
-            <div class="settings-group">
-                <label>Имя пользователя</label>
-                <input type="text" id="settingsNameInput" placeholder="Ваше имя" />
-                <div class="hint">Как вас будут видеть другие</div>
-            </div>
-            <div class="settings-group">
-                <label>Юзернейм (@username)</label>
-                <input type="text" id="settingsUsernameInput" placeholder="@username" />
-                <div class="hint">Уникальный идентификатор. Можно использовать буквы, цифры и подчёркивание</div>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-cancel" id="settingsCancelBtn">Отмена</button>
-                <button class="btn-confirm" id="settingsSaveBtn">💾 Сохранить</button>
-            </div>
+    <!-- ===== ЧАТЫ ===== -->
+    <div id="page-chats" class="page hidden">
+      <button class="back-btn" onclick="showPage('main')"><i class="fas fa-arrow-left"></i> Назад</button>
+      <h2 style="margin-bottom: 16px;"><i class="fas fa-comments" style="color:#ff4d6d;"></i> Мои чаты</h2>
+      <div class="chat-list">
+        <div class="chat-item" onclick="alert('Чат с техподдержкой открыт')">
+          <div class="chat-info"><h4>⚠️ Ruby Тех.поддержка</h4><p>Нет сообщений</p></div>
+          <div class="chat-status">—</div>
         </div>
+        <div class="chat-item" onclick="alert('Чат с продавцом открыт')">
+          <div class="chat-info"><h4>🛒 Покупка: Brawl Stars</h4><p>Аккаунт с 10к кубков</p></div>
+          <div class="chat-status">Ожидает</div>
+        </div>
+        <div class="chat-item" onclick="alert('Чат с покупателем открыт')">
+          <div class="chat-info"><h4>📦 Продажа: CS:GO</h4><p>Скин AK-47 Redline</p></div>
+          <div class="chat-status">В процессе</div>
+        </div>
+      </div>
     </div>
 
-    <!-- ============================================================ -->
-    <!--  ОКНО ЧАТА (полноэкранное)                                   -->
-    <!-- ============================================================ -->
-    <div class="chat-window-overlay" id="chatWindow">
-        <div class="chat-header">
-            <button class="back-btn" id="chatBackBtn">←</button>
-            <span class="chat-title" id="chatWithUser">Чат</span>
-            <span class="chat-status" id="chatStatus">● онлайн</span>
+    <!-- ===== ПРОФИЛЬ ===== -->
+    <div id="page-profile" class="page hidden">
+      <button class="back-btn" onclick="showPage('main')"><i class="fas fa-arrow-left"></i> Назад</button>
+      <h2 style="margin-bottom: 16px;"><i class="fas fa-user" style="color:#ff4d6d;"></i> Профиль</h2>
+      <div class="profile-card">
+        <div class="avatar-big">R</div>
+        <div class="username">@hehd</div>
+        <div class="user-id">ID: #RUBY-7F3A-2B1C</div>
+        <button class="edit-btn"><i class="fas fa-pen"></i> Редактировать</button>
+      </div>
+      <div class="profile-stats">
+        <div class="stat"><div class="num">0</div><div class="label">Товаров</div></div>
+        <div class="stat"><div class="num">0</div><div class="label">Продаж</div></div>
+        <div class="stat"><div class="num">0</div><div class="label">Отзывов</div></div>
+      </div>
+      <div class="finance-section">
+        <h4>Настройки</h4>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <label style="display:flex; align-items:center; gap:10px; font-size:14px; color:#b0c4e0;"><input type="checkbox"> Подписка на рассылку</label>
+          <label style="display:flex; align-items:center; gap:10px; font-size:14px; color:#b0c4e0;"><input type="checkbox"> Показывать онлайн-статус</label>
         </div>
-        <div class="chat-messages" id="chatMessages"></div>
-        <div class="chat-input-area">
-            <input id="chatInput" placeholder="Сообщение..." />
-            <button id="chatSendBtn">Отправить</button>
-        </div>
+      </div>
     </div>
 
-    <script>
-        // ============================================================
-        //  ПОЛНАЯ РАБОЧАЯ ВЕРСИЯ — НА LOCALSTORAGE
-        // ============================================================
-
-        // ============================================================
-        //  ПЕРЕМЕННЫЕ
-        // ============================================================
-        let currentUser = null;
-        let users = [];
-        let gamesData = [];
-        let approvedGoods = [];
-        let moderationQueue = [];
-        let promoCodes = [];
-        let chats = {};
-        let withdrawRequests = [];
-        let isLoginMode = true;
-        let selectedReviewStars = 0;
-        let pendingReviewData = null;
-        let idCounter = 100;
-        let selectedColor = '#3b82f6';
-        let pendingPurchase = null;
-        let activeGameId = null;
-        let currentChatWith = null;
-
-        // ============================================================
-        //  ЗАГРУЗКА ДАННЫХ ИЗ LOCALSTORAGE
-        // ============================================================
-        function loadAllData() {
-            try {
-                // Загружаем пользователей
-                const savedUsers = localStorage.getItem('rubi_users');
-                if (savedUsers) {
-                    users = JSON.parse(savedUsers);
-                } else {
-                    users = [
-                        { 
-                            id: 1, 
-                            username: 'admin', 
-                            display_name: 'Администратор', 
-                            password: 'admin123', 
-                            balance: 9999, 
-                            is_admin: true, 
-                            tg: '', 
-                            chats: [], 
-                            history: [] 
-                        },
-                        { 
-                            id: 2, 
-                            username: 'user', 
-                            display_name: 'Пользователь', 
-                            password: 'user123', 
-                            balance: 500, 
-                            is_admin: false, 
-                            tg: '', 
-                            chats: [], 
-                            history: [] 
-                        }
-                    ];
-                    localStorage.setItem('rubi_users', JSON.stringify(users));
-                }
-
-                // Загружаем игры
-                const savedGames = localStorage.getItem('rubi_games');
-                if (savedGames) {
-                    gamesData = JSON.parse(savedGames);
-                } else {
-                    gamesData = [
-                        { 
-                            id: 'csgo', 
-                            name: 'CS:GO', 
-                            color: '#f59e0b', 
-                            items: ['Ключ CS:GO', 'Скин AK-47', 'Скин M4A4', 'Операционный пропуск'] 
-                        },
-                        { 
-                            id: 'dota2', 
-                            name: 'Dota 2', 
-                            color: '#ef4444', 
-                            items: ['Аркана', 'Набор скинов', 'Боевой пропуск'] 
-                        },
-                        { 
-                            id: 'minecraft', 
-                            name: 'Minecraft', 
-                            color: '#10b981', 
-                            items: ['Лицензионный ключ', 'Набор скинов', 'Доступ на сервер'] 
-                        },
-                        { 
-                            id: 'gta5', 
-                            name: 'GTA V', 
-                            color: '#3b82f6', 
-                            items: ['Лицензионный ключ', 'Внутриигровая валюта', 'Кастомный аккаунт'] 
-                        }
-                    ];
-                    localStorage.setItem('rubi_games', JSON.stringify(gamesData));
-                }
-
-                // Загружаем популярные товары
-                const savedApproved = localStorage.getItem('rubi_approved');
-                if (savedApproved) {
-                    approvedGoods = JSON.parse(savedApproved);
-                } else {
-                    approvedGoods = [
-                        { game_id: 'csgo', item_name: 'Ключ CS:GO', price: 25, seller: 'Rubi', description: 'Официальный ключ' },
-                        { game_id: 'dota2', item_name: 'Аркана', price: 50, seller: 'Rubi', description: 'Легендарный скин' },
-                        { game_id: 'minecraft', item_name: 'Лицензионный ключ', price: 35, seller: 'Rubi', description: 'Полная версия' }
-                    ];
-                    localStorage.setItem('rubi_approved', JSON.stringify(approvedGoods));
-                }
-
-                // Загружаем модерацию
-                const savedModeration = localStorage.getItem('rubi_moderation');
-                if (savedModeration) {
-                    moderationQueue = JSON.parse(savedModeration);
-                } else {
-                    moderationQueue = [];
-                    localStorage.setItem('rubi_moderation', JSON.stringify(moderationQueue));
-                }
-
-                // Загружаем промокоды
-                const savedPromos = localStorage.getItem('rubi_promos');
-                if (savedPromos) {
-                    promoCodes = JSON.parse(savedPromos);
-                } else {
-                    promoCodes = [
-                        { code: 'WELCOME', type: 'bonus', value: 50, limit_count: 10, used: 0, game_id: null, expires: null },
-                        { code: 'SUMMER25', type: 'percent', value: 25, limit_count: 5, used: 0, game_id: null, expires: '2026-12-31' }
-                    ];
-                    localStorage.setItem('rubi_promos', JSON.stringify(promoCodes));
-                }
-
-                // Загружаем чаты
-                const savedChats = localStorage.getItem('rubi_chats');
-                if (savedChats) {
-                    chats = JSON.parse(savedChats);
-                } else {
-                    chats = {};
-                    localStorage.setItem('rubi_chats', JSON.stringify(chats));
-                }
-
-                // Загружаем заявки на вывод
-                const savedWithdraw = localStorage.getItem('rubi_withdraw');
-                if (savedWithdraw) {
-                    withdrawRequests = JSON.parse(savedWithdraw);
-                } else {
-                    withdrawRequests = [];
-                    localStorage.setItem('rubi_withdraw', JSON.stringify(withdrawRequests));
-                }
-
-                console.log('✅ Данные загружены из localStorage');
-                console.log('👤 Пользователей:', users.length);
-                console.log('🎮 Игр:', gamesData.length);
-                console.log('🔥 Популярных товаров:', approvedGoods.length);
-                console.log('🎫 Промокодов:', promoCodes.length);
-                
-                return true;
-            } catch (e) {
-                console.error('❌ Ошибка загрузки данных:', e);
-                return false;
-            }
-        }
-
-        // ============================================================
-        //  СОХРАНЕНИЕ ВСЕХ ДАННЫХ
-        // ============================================================
-        function saveAllData() {
-            try {
-                localStorage.setItem('rubi_users', JSON.stringify(users));
-                localStorage.setItem('rubi_games', JSON.stringify(gamesData));
-                localStorage.setItem('rubi_approved', JSON.stringify(approvedGoods));
-                localStorage.setItem('rubi_moderation', JSON.stringify(moderationQueue));
-                localStorage.setItem('rubi_promos', JSON.stringify(promoCodes));
-                localStorage.setItem('rubi_chats', JSON.stringify(chats));
-                localStorage.setItem('rubi_withdraw', JSON.stringify(withdrawRequests));
-                return true;
-            } catch (e) {
-                console.error('❌ Ошибка сохранения:', e);
-                return false;
-            }
-        }
-
-        // ============================================================
-        //  АВТОРИЗАЦИЯ
-        // ============================================================
-        const authOverlay = document.getElementById('authOverlay');
-        const authLogin = document.getElementById('authLogin');
-        const authPassword = document.getElementById('authPassword');
-        const authBtn = document.getElementById('authBtn');
-        const authError = document.getElementById('authError');
-        const authSwitchBtn = document.getElementById('authSwitchBtn');
-
-        function showAuthError(msg) {
-            authError.textContent = msg;
-            authError.style.display = 'block';
-        }
-
-        function hideAuthError() {
-            authError.style.display = 'none';
-        }
-
-        function handleAuth() {
-            const username = authLogin.value.trim().toLowerCase();
-            const password = authPassword.value.trim();
-
-            if (!username || !password) {
-                showAuthError('Заполните все поля!');
-                return;
-            }
-
-            if (isLoginMode) {
-                const user = users.find(u => u.username === username && u.password === password);
-                if (!user) {
-                    showAuthError('Неверное имя пользователя или пароль!');
-                    return;
-                }
-                currentUser = user;
-                hideAuthError();
-                enterApp();
-            } else {
-                if (users.find(u => u.username === username)) {
-                    showAuthError('Пользователь с таким именем уже существует!');
-                    return;
-                }
-                const newUser = {
-                    id: Date.now(),
-                    username: username,
-                    display_name: username,
-                    password: password,
-                    balance: 10,
-                    is_admin: false,
-                    tg: '',
-                    chats: [],
-                    history: []
-                };
-                users.push(newUser);
-                currentUser = newUser;
-                hideAuthError();
-                saveAllData();
-                enterApp();
-            }
-        }
-
-        function enterApp() {
-            authOverlay.classList.remove('active');
-            document.getElementById('appWrapper').style.display = 'flex';
-            updateProfileUI();
-
-            if (currentUser.is_admin) {
-                document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
-            } else {
-                document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
-            }
-
-            initSystemChat();
-            renderAll();
-            updateUI();
-            populateSellGames();
-            populateAdminGames();
-            populatePromoGames();
-            populateAdminGoodsGames();
-
-            localStorage.setItem('rubi_session', currentUser.username);
-        }
-
-        function updateProfileUI() {
-            if (!currentUser) return;
-            document.getElementById('userBadge').textContent = '👤 ' + (currentUser.display_name || currentUser.username);
-            document.getElementById('profileName').textContent = currentUser.display_name || currentUser.username;
-            document.getElementById('profileUsername').textContent = '@' + currentUser.username;
-            document.getElementById('profileAvatar').textContent = (currentUser.display_name || currentUser.username).charAt(0).toUpperCase();
-        }
-
-        authBtn.addEventListener('click', handleAuth);
-        authLogin.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAuth(); });
-        authPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAuth(); });
-
-        authSwitchBtn.addEventListener('click', function() {
-            isLoginMode = !isLoginMode;
-            this.textContent = isLoginMode ? 'Зарегистрироваться' : 'Войти';
-            authBtn.textContent = isLoginMode ? 'Войти' : 'Зарегистрироваться';
-            authLogin.value = '';
-            authPassword.value = '';
-            hideAuthError();
-        });
-
-        document.getElementById('logoutBtn').addEventListener('click', function() {
-            if (confirm('Выйти из аккаунта?')) {
-                currentUser = null;
-                document.getElementById('appWrapper').style.display = 'none';
-                authOverlay.classList.add('active');
-                authLogin.value = '';
-                authPassword.value = '';
-                hideAuthError();
-                isLoginMode = true;
-                authBtn.textContent = 'Войти';
-                authSwitchBtn.textContent = 'Зарегистрироваться';
-                localStorage.removeItem('rubi_session');
-            }
-        });
-
-        // ============================================================
-        //  СИСТЕМНЫЙ ЧАТ
-        // ============================================================
-        function initSystemChat() {
-            const systemChatKey = 'rubi_support';
-            if (!chats[systemChatKey]) {
-                chats[systemChatKey] = {
-                    id: systemChatKey,
-                    users: ['Rubi Тех.поддержка', 'system'],
-                    messages: [],
-                    is_system: true,
-                    read_by: []
-                };
-            }
-
-            if (currentUser && !currentUser.chats) currentUser.chats = [];
-            if (currentUser && !currentUser.chats.includes(systemChatKey)) {
-                currentUser.chats.push(systemChatKey);
-            }
-            saveAllData();
-        }
-
-        // ============================================================
-        //  РЕНДЕР ИГР
-        // ============================================================
-        function renderGames() {
-            const grid = document.getElementById('gamesGrid');
-            grid.innerHTML = '';
-            gamesData.forEach(g => {
-                const card = document.createElement('div');
-                card.className = 'game-card';
-                const letter = g.name.charAt(0).toUpperCase();
-                const color = g.color || '#3b82f6';
-                card.innerHTML = `
-                    <div class="game-avatar" style="background:${color};">${letter}</div>
-                    <h4>${g.name}</h4>
-                    <p>${g.items ? g.items.length : 0} товаров</p>
-                `;
-                card.addEventListener('click', () => toggleGameGoods(g.id));
-                grid.appendChild(card);
-            });
-        }
-
-        function toggleGameGoods(gameId) {
-            const container = document.getElementById('gameGoodsContainer');
-            if (activeGameId === gameId && container.querySelector('.game-goods-section.active')) {
-                container.innerHTML = '';
-                activeGameId = null;
-                return;
-            }
-            const game = gamesData.find(g => g.id === gameId);
-            if (!game) return;
-
-            let html = `
-                <div class="game-goods-section active">
-                    <div class="goods-header">
-                        <span>🎮 ${game.name} — товары</span>
-                        <button class="close-btn" onclick="closeGameGoods()">✕</button>
-                    </div>
-            `;
-
-            if (game.items && game.items.length > 0) {
-                game.items.forEach(item => {
-                    const price = Math.floor(Math.random() * 40) + 5;
-                    html += `
-                        <div class="goods-item">
-                            <div class="goods-info">
-                                <span class="goods-name">${item}</span>
-                                <span class="goods-seller">👤 Rubi</span>
-                            </div>
-                            <div class="goods-actions">
-                                <span class="goods-price">⭐ ${price}</span>
-                                <button class="buy-btn" onclick="openBuyModal('${item}', ${price}, ${price}, '${game.id}', 'Rubi')">Купить</button>
-                            </div>
-                        </div>
-                    `;
-                });
-            } else {
-                html += `<div style="padding:20px;text-align:center;color:#94a3b8;">Нет товаров</div>`;
-            }
-
-            html += '</div>';
-            container.innerHTML = html;
-            activeGameId = gameId;
-            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        function closeGameGoods() {
-            document.getElementById('gameGoodsContainer').innerHTML = '';
-            activeGameId = null;
-        }
-
-        // ============================================================
-        //  РЕНДЕР ПОПУЛЯРНЫХ ТОВАРОВ
-        // ============================================================
-        function renderFeed() {
-            const container = document.getElementById('goodsFeed');
-            if (approvedGoods.length === 0) {
-                container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;">Нет товаров. Админ добавит скоро!</div>';
-                return;
-            }
-            const show = approvedGoods.slice(0, 20);
-            container.innerHTML = show.map(item => {
-                const game = gamesData.find(g => g.id === item.game_id);
-                return `
-                    <div class="feed-item">
-                        <div class="info">
-                            <span class="game-tag">${game ? game.name : 'Неизвестно'}</span>
-                            <span class="item-name">${item.item_name}</span>
-                            <span class="item-desc">${item.description || 'Без описания'}</span>
-                            <span class="item-seller">👤 ${item.seller || 'Rubi'}</span>
-                        </div>
-                        <div class="item-actions">
-                            <span class="item-price">⭐ ${item.price}</span>
-                            <button class="buy-btn" onclick="openBuyModal('${item.item_name}', ${item.price}, ${item.price}, '${item.game_id}', '${item.seller || 'Rubi'}')">Купить</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // ============================================================
-        //  ФУНКЦИЯ ВЫБОРА ЗВЁЗД В ОТЗЫВЕ
-        // ============================================================
-        function setReviewStars(count) {
-            selectedReviewStars = count;
-            const stars = document.querySelectorAll('#reviewStars span');
-            stars.forEach((el, index) => {
-                el.classList.toggle('active', index < count);
-            });
-            const label = document.getElementById('reviewStarsLabel');
-            if (count === 1) label.textContent = '⭐ Плохо';
-            else if (count === 2) label.textContent = '⭐⭐ Ниже среднего';
-            else if (count === 3) label.textContent = '⭐⭐⭐ Средне';
-            else if (count === 4) label.textContent = '⭐⭐⭐⭐ Хорошо';
-            else if (count === 5) label.textContent = '⭐⭐⭐⭐⭐ Отлично!';
-            else label.textContent = 'Выберите оценку';
-        }
-
-        // Клик по звёздам в отзыве
-        document.querySelectorAll('#reviewStars span').forEach(el => {
-            el.addEventListener('click', function() {
-                setReviewStars(parseInt(this.dataset.star));
-            });
-        });
-
-        // ============================================================
-        //  ПОКУПКА
-        // ============================================================
-        function openBuyModal(itemName, finalPrice, originalPrice, gameId, seller) {
-            pendingPurchase = { itemName, finalPrice, originalPrice, gameId, seller: seller || 'Продавец' };
-            document.getElementById('modalItemName').textContent = itemName;
-            document.getElementById('modalFinalPrice').textContent = `⭐ ${finalPrice}`;
-            document.getElementById('modalOldPrice').textContent = originalPrice > finalPrice ? `⭐${originalPrice}` : '';
-            document.getElementById('modalOldPrice').style.display = originalPrice > finalPrice ? 'inline' : 'none';
-            document.getElementById('modalPromoApplied').classList.remove('show');
-            document.getElementById('modalPromoInput').value = '';
-            document.getElementById('modalApplyPromoBtn').textContent = 'Применить промокод';
-            document.getElementById('modalApplyPromoBtn').disabled = false;
-            document.getElementById('buyModal').classList.add('active');
-        }
-
-        document.getElementById('modalCancelBtn').addEventListener('click', function() {
-            document.getElementById('buyModal').classList.remove('active');
-            pendingPurchase = null;
-        });
-
-        document.getElementById('modalApplyPromoBtn').addEventListener('click', function() {
-            const code = document.getElementById('modalPromoInput').value.trim().toUpperCase();
-            if (!code || !pendingPurchase) return;
-
-            const promo = promoCodes.find(p =>
-                p.code === code &&
-                p.used < p.limit_count &&
-                (p.game_id === pendingPurchase.gameId || p.game_id === null) &&
-                (p.expires ? new Date(p.expires) > new Date() : true)
-            );
-
-            if (!promo) {
-                document.getElementById('modalPromoApplied').textContent = '❌ Неверный или истёкший промокод';
-                document.getElementById('modalPromoApplied').style.color = '#dc2626';
-                document.getElementById('modalPromoApplied').classList.add('show');
-                return;
-            }
-
-            if (promo.type === 'percent') {
-                const discount = Math.round(pendingPurchase.finalPrice * (promo.value / 100));
-                const newPrice = pendingPurchase.finalPrice - discount;
-                pendingPurchase.finalPrice = newPrice;
-                pendingPurchase.appliedPromo = promo;
-                document.getElementById('modalFinalPrice').textContent = `⭐ ${newPrice}`;
-                document.getElementById('modalPromoApplied').textContent = `✅ Скидка ${promo.value}%! Цена: ⭐${newPrice}`;
-                document.getElementById('modalPromoApplied').style.color = '#16a34a';
-                document.getElementById('modalPromoApplied').classList.add('show');
-                this.textContent = '✅ Применён';
-                this.disabled = true;
-            } else if (promo.type === 'bonus') {
-                pendingPurchase.appliedPromo = promo;
-                document.getElementById('modalPromoApplied').textContent = `✅ Промокод активирован! +${promo.value}⭐ после покупки`;
-                document.getElementById('modalPromoApplied').style.color = '#16a34a';
-                document.getElementById('modalPromoApplied').classList.add('show');
-                this.textContent = '✅ Применён';
-                this.disabled = true;
-            }
-        });
-
-        document.getElementById('modalConfirmBtn').addEventListener('click', function() {
-            if (!pendingPurchase) return;
-
-            const price = pendingPurchase.finalPrice;
-            const name = pendingPurchase.itemName;
-            const promo = pendingPurchase.appliedPromo || null;
-            const seller = pendingPurchase.seller || 'Продавец';
-
-            if (currentUser.balance < price) {
-                alert(`❌ Не хватает звёзд! Нужно ⭐${price}, у вас ⭐${currentUser.balance}`);
-                return;
-            }
-
-            currentUser.balance -= price;
-            if (!currentUser.history) currentUser.history = [];
-            currentUser.history.unshift({ desc: `Покупка: ${name}`, amount: `-${price}`, plus: false });
-
-            if (promo && promo.type === 'bonus') {
-                currentUser.balance += promo.value;
-                currentUser.history.unshift({ desc: `Бонус по промокоду ${promo.code}`, amount: `+${promo.value}`, plus: true });
-                promo.used += 1;
-                alert(`🎉 Бонус ${promo.value}⭐ зачислен!`);
-            } else if (promo && promo.type === 'percent') {
-                promo.used += 1;
-            }
-
-            const purchaseData = {
-                itemName: name,
-                price: price,
-                seller: seller,
-                buyer: currentUser.username,
-                gameId: pendingPurchase.gameId,
-                timestamp: new Date().toISOString()
-            };
-
-            const chatKey = [currentUser.username, seller].sort().join('_');
-            if (!chats[chatKey]) {
-                chats[chatKey] = {
-                    id: chatKey,
-                    users: [currentUser.username, seller],
-                    messages: [],
-                    purchase: purchaseData,
-                    read_by: []
-                };
-            } else {
-                chats[chatKey].purchase = purchaseData;
-            }
-
-            if (!chats[chatKey].messages) chats[chatKey].messages = [];
-            chats[chatKey].messages.push({
-                from: 'system',
-                text: `🛒 ${currentUser.username} купил "${name}" за ⭐${price}`,
-                time: new Date().toISOString(),
-                isSystem: true,
-                isRead: false
-            });
-
-            if (!currentUser.chats) currentUser.chats = [];
-            if (!currentUser.chats.includes(chatKey)) {
-                currentUser.chats.push(chatKey);
-            }
-
-            document.getElementById('buyModal').classList.remove('active');
-
-            pendingReviewData = purchaseData;
-            document.getElementById('reviewItemName').textContent = name;
-            selectedReviewStars = 0;
-            setReviewStars(0);
-            document.getElementById('reviewText').value = '';
-            document.getElementById('reviewModal').classList.add('active');
-
-            updateUI();
-            saveAllData();
-            renderAll();
-            alert(`✅ Вы купили "${name}" за ⭐${price}!`);
-            pendingPurchase = null;
-        });
-
-        // ============================================================
-        //  ОТЗЫВЫ
-        // ============================================================
-        document.getElementById('reviewCancelBtn').addEventListener('click', function() {
-            document.getElementById('reviewModal').classList.remove('active');
-            pendingReviewData = null;
-        });
-
-        document.getElementById('reviewSubmitBtn').addEventListener('click', function() {
-            if (!pendingReviewData) return;
-            if (selectedReviewStars === 0) {
-                alert('Поставьте оценку!');
-                return;
-            }
-            const text = document.getElementById('reviewText').value.trim() || 'Без текста';
-            const review = {
-                itemName: pendingReviewData.itemName,
-                stars: selectedReviewStars,
-                text: text,
-                buyer: currentUser.username,
-                seller: pendingReviewData.seller,
-                timestamp: new Date().toISOString()
-            };
-
-            const chatKey = [currentUser.username, pendingReviewData.seller].sort().join('_');
-            if (chats[chatKey]) {
-                if (!chats[chatKey].reviews) chats[chatKey].reviews = [];
-                chats[chatKey].reviews.push(review);
-                if (!chats[chatKey].messages) chats[chatKey].messages = [];
-                chats[chatKey].messages.push({
-                    from: currentUser.username,
-                    text: `⭐ Оценка: ${selectedReviewStars}/5. ${text}`,
-                    time: new Date().toISOString(),
-                    isReview: true,
-                    isRead: false
-                });
-            }
-
-            document.getElementById('reviewModal').classList.remove('active');
-            pendingReviewData = null;
-            saveAllData();
-            renderChats();
-            alert('✅ Спасибо за отзыв!');
-        });
-
-        // ============================================================
-        //  ПРОДАТЬ
-        // ============================================================
-        function populateSellGames() {
-            const select = document.getElementById('sellGameSelect');
-            if (!select) return;
-
-            select.innerHTML = '<option value="">— выберите игру —</option>';
-            gamesData.forEach(g => {
-                const opt = document.createElement('option');
-                opt.value = g.id;
-                opt.textContent = g.name;
-                select.appendChild(opt);
-            });
-
-            const itemSelect = document.getElementById('sellItemSelect');
-            if (itemSelect) {
-                itemSelect.innerHTML = '<option value="">— сначала выберите игру —</option>';
-            }
-        }
-
-        document.getElementById('sellGameSelect').addEventListener('change', function() {
-            const select = document.getElementById('sellItemSelect');
-            const gameId = this.value;
-            const game = gamesData.find(g => g.id === gameId);
-            if (!game) {
-                select.innerHTML = '<option value="">— сначала выберите игру —</option>';
-                return;
-            }
-            select.innerHTML = '<option value="">— выберите товар —</option>';
-            if (game.items) {
-                game.items.forEach(item => {
-                    const opt = document.createElement('option');
-                    opt.value = item;
-                    opt.textContent = item;
-                    select.appendChild(opt);
-                });
-            }
-        });
-
-        document.getElementById('sellSubmitBtn').addEventListener('click', function() {
-            const gameId = document.getElementById('sellGameSelect').value;
-            const itemName = document.getElementById('sellItemSelect').value;
-            const desc = document.getElementById('sellDescInput').value.trim() || 'Без описания';
-            const price = parseInt(document.getElementById('sellPriceInput').value);
-
-            if (!gameId) { alert('Выберите игру!'); return; }
-            if (!itemName) { alert('Выберите товар!'); return; }
-            if (isNaN(price) || price < 1) { alert('Введите цену!'); return; }
-
-            const newItem = {
-                id: idCounter++,
-                game_id: gameId,
-                item_name: itemName,
-                description: desc,
-                price: price,
-                seller: currentUser.username,
-                status: 'pending'
-            };
-
-            moderationQueue.push(newItem);
-
-            document.getElementById('sellPriceInput').value = '';
-            document.getElementById('sellDescInput').value = '';
-            document.getElementById('sellItemSelect').value = '';
-            document.getElementById('sellGameSelect').value = '';
-
-            renderLots();
-            renderModeration();
-            updateUI();
-            saveAllData();
-            alert(`✅ Товар отправлен на модерацию!`);
-        });
-
-        function renderLots() {
-            const container = document.getElementById('userLots');
-            const userLots = moderationQueue.filter(m => m.seller === currentUser.username && m.status === 'pending');
-            if (userLots.length === 0) {
-                container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:12px;">Нет товаров</div>';
-                return;
-            }
-            container.innerHTML = userLots.map(l => {
-                const game = gamesData.find(g => g.id === l.game_id);
-                return `
-                    <div class="feed-item" style="margin-bottom:6px;">
-                        <div class="info">
-                            <span class="game-tag">${game ? game.name : 'Неизвестно'}</span>
-                            <span class="item-name">${l.item_name}</span>
-                            <span class="item-desc">${l.description || ''}</span>
-                        </div>
-                        <span class="status-pending">⏳ На модерации</span>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // ============================================================
-        //  АДМИН
-        // ============================================================
-        function populateAdminGames() {
-            const select = document.getElementById('adminGameSelect');
-            select.innerHTML = '<option value="">— выберите игру —</option>';
-            gamesData.forEach(g => {
-                const opt = document.createElement('option');
-                opt.value = g.id;
-                opt.textContent = g.name;
-                select.appendChild(opt);
-            });
-        }
-
-        document.getElementById('adminAddGameBtn').addEventListener('click', function() {
-            const name = document.getElementById('adminGameName').value.trim();
-            if (!name) { alert('Введите название игры!'); return; }
-
-            const newGame = {
-                id: name.toLowerCase().replace(/\s/g, '') + Date.now(),
-                name: name,
-                color: selectedColor,
-                items: []
-            };
-            gamesData.push(newGame);
-            document.getElementById('adminGameName').value = '';
-            populateSellGames();
-            populateAdminGames();
-            populatePromoGames();
-            populateAdminGoodsGames();
-            renderGames();
-            saveAllData();
-            alert(`✅ Игра "${name}" добавлена!`);
-        });
-
-        // Выбор цвета
-        document.querySelectorAll('.color-option').forEach(el => {
-            el.addEventListener('click', function() {
-                document.querySelectorAll('.color-option').forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                selectedColor = this.dataset.color;
-            });
-        });
-
-        document.getElementById('adminAddItemBtn').addEventListener('click', function() {
-            const gameId = document.getElementById('adminGameSelect').value;
-            const itemName = document.getElementById('adminItemName').value.trim();
-            if (!gameId) { alert('Выберите игру!'); return; }
-            if (!itemName) { alert('Введите название товара!'); return; }
-
-            const game = gamesData.find(g => g.id === gameId);
-            if (!game) { alert('Игра не найдена!'); return; }
-
-            if (!game.items) game.items = [];
-            game.items.push(itemName);
-            document.getElementById('adminItemName').value = '';
-            populateSellGames();
-            populateAdminGoodsGames();
-            renderGames();
-            saveAllData();
-            alert(`✅ Товар "${itemName}" добавлен в "${game.name}"!`);
-        });
-
-        function renderModeration() {
-            const container = document.getElementById('moderationList');
-            const pending = moderationQueue.filter(m => m.status === 'pending');
-            if (pending.length === 0) {
-                container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;">Нет товаров на модерации</div>';
-                return;
-            }
-            container.innerHTML = pending.map(m => {
-                const game = gamesData.find(g => g.id === m.game_id);
-                return `
-                    <div class="moderation-item">
-                        <div class="mod-info">
-                            <strong>${m.item_name}</strong>
-                            <span class="mod-game">${game ? game.name : 'Неизвестно'} • ⭐${m.price}</span>
-                            ${m.description ? `<span style="font-size:12px;color:#94a3b8;">${m.description}</span>` : ''}
-                            <span style="font-size:11px;color:#94a3b8;">Продавец: ${m.seller}</span>
-                        </div>
-                        <div class="mod-actions">
-                            <button class="admin-btn green" onclick="approveItem(${m.id})">✅ Одобрить</button>
-                            <button class="admin-btn red" onclick="rejectItem(${m.id})">❌ Отклонить</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function approveItem(id) {
-            const item = moderationQueue.find(m => m.id === id);
-            if (!item) return;
-            item.status = 'approved';
-
-            const newGood = {
-                game_id: item.game_id,
-                item_name: item.item_name,
-                price: item.price,
-                seller: item.seller,
-                description: item.description || 'Отличный товар!'
-            };
-
-            approvedGoods.push(newGood);
-            moderationQueue = moderationQueue.filter(m => m.id !== id);
-
-            renderFeed();
-            renderModeration();
-            renderAdminGoods();
-            updateUI();
-            saveAllData();
-            alert(`✅ Товар "${item.item_name}" одобрен!`);
-        }
-
-        function rejectItem(id) {
-            const item = moderationQueue.find(m => m.id === id);
-            if (!item) return;
-            moderationQueue = moderationQueue.filter(m => m.id !== id);
-            renderModeration();
-            saveAllData();
-            alert(`❌ Товар "${item.item_name}" отклонён.`);
-        }
-
-        // ============================================================
-        //  АДМИН — УПРАВЛЕНИЕ ПОПУЛЯРНЫМИ ТОВАРАМИ
-        // ============================================================
-        function populateAdminGoodsGames() {
-            const select = document.getElementById('adminGoodsGameSelect');
-            select.innerHTML = '<option value="">— выберите игру —</option>';
-            gamesData.forEach(g => {
-                const opt = document.createElement('option');
-                opt.value = g.id;
-                opt.textContent = g.name;
-                select.appendChild(opt);
-            });
-        }
-
-        document.getElementById('adminGoodsGameSelect').addEventListener('change', function() {
-            const select = document.getElementById('adminGoodsItemSelect');
-            const gameId = this.value;
-            const game = gamesData.find(g => g.id === gameId);
-            if (!game) {
-                select.innerHTML = '<option value="">— выберите товар —</option>';
-                return;
-            }
-            select.innerHTML = '<option value="">— выберите товар —</option>';
-            if (game.items) {
-                game.items.forEach(item => {
-                    const opt = document.createElement('option');
-                    opt.value = item;
-                    opt.textContent = item;
-                    select.appendChild(opt);
-                });
-            }
-        });
-
-        document.getElementById('adminAddGoodsBtn').addEventListener('click', function() {
-            const gameId = document.getElementById('adminGoodsGameSelect').value;
-            const itemName = document.getElementById('adminGoodsItemSelect').value;
-
-            if (!gameId) { alert('Выберите игру!'); return; }
-            if (!itemName) { alert('Выберите товар!'); return; }
-
-            if (approvedGoods.some(g => g.game_id === gameId && g.item_name === itemName)) {
-                alert('Этот товар уже есть в популярных!');
-                return;
-            }
-
-            const game = gamesData.find(g => g.id === gameId);
-            const price = Math.floor(Math.random() * 40) + 5;
-
-            approvedGoods.push({
-                game_id: gameId,
-                item_name: itemName,
-                price: price,
-                seller: 'Rubi',
-                description: 'Популярный товар!'
-            });
-
-            saveAllData();
-            renderFeed();
-            renderAdminGoods();
-            alert(`✅ Товар "${itemName}" добавлен в популярные!`);
-        });
-
-        function renderAdminGoods() {
-            const container = document.getElementById('adminGoodsList');
-            if (approvedGoods.length === 0) {
-                container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;">Нет популярных товаров</div>';
-                return;
-            }
-
-            container.innerHTML = approvedGoods.map((item, index) => {
-                const game = gamesData.find(g => g.id === item.game_id);
-                return `
-                    <div class="admin-goods-item">
-                        <div class="goods-info">
-                            <span class="goods-name">${item.item_name}</span>
-                            <span class="goods-meta">${game ? game.name : 'Неизвестно'} • ⭐${item.price} • 👤 ${item.seller || 'Rubi'}</span>
-                            ${item.description ? `<span class="goods-meta">${item.description}</span>` : ''}
-                        </div>
-                        <button class="admin-btn outline" onclick="removeGoods(${index})">🗑 Удалить</button>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function removeGoods(index) {
-            if (!confirm('Удалить этот товар из популярных?')) return;
-            approvedGoods.splice(index, 1);
-            saveAllData();
-            renderFeed();
-            renderAdminGoods();
-            alert('✅ Товар удалён из популярных!');
-        }
-
-        // ============================================================
-        //  ПРОМОКОДЫ
-        // ============================================================
-        function populatePromoGames() {
-            const select = document.getElementById('promoGameSelect');
-            select.innerHTML = '<option value="">На все игры</option>';
-            gamesData.forEach(g => {
-                const opt = document.createElement('option');
-                opt.value = g.id;
-                opt.textContent = g.name;
-                select.appendChild(opt);
-            });
-        }
-
-        document.getElementById('adminAddPromoBtn').addEventListener('click', function() {
-            const code = document.getElementById('promoCode').value.trim().toUpperCase();
-            const value = parseInt(document.getElementById('promoValue').value);
-            const limit = parseInt(document.getElementById('promoLimit').value) || 1;
-            const type = document.getElementById('promoType').value;
-            const gameId = document.getElementById('promoGameSelect').value;
-            const expires = document.getElementById('promoExpires').value.trim();
-
-            if (!code) { alert('Введите код!'); return; }
-            if (isNaN(value) || value < 1) { alert('Введите значение!'); return; }
-            if (promoCodes.find(p => p.code === code)) { alert('Такой код уже есть!'); return; }
-
-            if (expires) {
-                const date = new Date(expires);
-                if (isNaN(date.getTime())) {
-                    alert('Введите корректную дату в формате ГГГГ-ММ-ДД');
-                    return;
-                }
-            }
-
-            promoCodes.push({
-                code: code,
-                type: type,
-                value: value,
-                limit_count: limit,
-                used: 0,
-                game_id: gameId || null,
-                expires: expires || null
-            });
-
-            document.getElementById('promoCode').value = '';
-            document.getElementById('promoValue').value = '';
-            document.getElementById('promoLimit').value = '';
-            document.getElementById('promoExpires').value = '';
-
-            renderPromos();
-            saveAllData();
-            alert(`✅ Промокод "${code}" создан!`);
-        });
-
-        function renderPromos() {
-            const container = document.getElementById('promoList');
-            if (promoCodes.length === 0) {
-                container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;">Нет промокодов</div>';
-                return;
-            }
-            container.innerHTML = promoCodes.map(p => {
-                const game = p.game_id ? gamesData.find(g => g.id === p.game_id) : null;
-                const typeText = p.type === 'percent' ? `Скидка ${p.value}%` : `Бонус ${p.value}⭐`;
-                const usedText = `${p.used}/${p.limit_count}`;
-                const expiresText = p.expires ? `до ${p.expires}` : 'бессрочный';
-                const isExpired = p.expires ? new Date(p.expires) < new Date() : false;
-                const isValid = !isExpired && p.used < p.limit_count;
-                return `
-                    <div class="promo-item">
-                        <span class="promo-code">${p.code}</span>
-                        <span class="promo-info">${typeText} • ${game ? game.name : 'Все игры'} • ${usedText} • ${expiresText}</span>
-                        <span style="color:${isValid ? '#16a34a' : '#dc2626'};font-size:12px;font-weight:600;">
-                            ${isValid ? '✅ Активен' : '❌ Истёк'}
-                        </span>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // ============================================================
-        //  ЗАЯВКИ НА ВЫВОД
-        // ============================================================
-        let selectedWithdrawAmount = null;
-
-        document.querySelectorAll('.preset-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                selectedWithdrawAmount = parseInt(this.dataset.amount);
-                document.getElementById('withdrawAmount').value = selectedWithdrawAmount;
-            });
-        });
-
-        document.getElementById('withdrawBtn').addEventListener('click', function() {
-            const tg = document.getElementById('withdrawTg').value.trim();
-            const amountInput = document.getElementById('withdrawAmount');
-            let amount = parseInt(amountInput.value) || selectedWithdrawAmount;
-
-            if (!tg) {
-                alert('Введите ваш Telegram username!');
-                return;
-            }
-            if (isNaN(amount) || amount < 100) {
-                alert('Минимальная сумма вывода: 100 ⭐');
-                return;
-            }
-            if (amount > 10000) {
-                alert('Максимальная сумма вывода: 10 000 ⭐');
-                return;
-            }
-            if (amount > currentUser.balance) {
-                alert(`❌ Недостаточно средств! У вас ${currentUser.balance} ⭐`);
-                return;
-            }
-
-            let tgClean = tg;
-            if (tgClean.startsWith('@')) tgClean = tgClean.substring(1);
-
-            const newRequest = {
-                id: idCounter++,
-                user_id: currentUser.username,
-                tg: tgClean,
-                amount: amount,
-                status: 'pending',
-                timestamp: new Date().toISOString()
-            };
-
-            withdrawRequests.push(newRequest);
-
-            currentUser.balance -= amount;
-            if (!currentUser.history) currentUser.history = [];
-            currentUser.history.unshift({ desc: `Заявка на вывод ${amount}⭐ на @${tgClean}`, amount: `-${amount}`, plus: false });
-
-            document.getElementById('withdrawTg').value = '';
-            document.getElementById('withdrawAmount').value = '';
-            selectedWithdrawAmount = null;
-            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-
-            updateUI();
-            renderWithdrawRequests();
-            saveAllData();
-            alert(`✅ Заявка на вывод ${amount}⭐ отправлена!`);
-        });
-
-        function renderWithdrawRequests() {
-            const container = document.getElementById('withdrawRequestsList');
-            if (!currentUser.is_admin) {
-                container.innerHTML = '';
-                return;
-            }
-
-            const pending = withdrawRequests.filter(r => r.status === 'pending');
-            if (pending.length === 0) {
-                container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;">Нет заявок на вывод</div>';
-                return;
-            }
-
-            container.innerHTML = pending.map(r => `
-                <div class="moderation-item">
-                    <div class="mod-info">
-                        <strong>${r.user_id}</strong>
-                        <span class="mod-game">📤 ${r.amount}⭐ на @${r.tg}</span>
-                        <span style="font-size:11px;color:#94a3b8;">${new Date(r.timestamp).toLocaleString()}</span>
-                    </div>
-                    <div class="mod-actions">
-                        <button class="admin-btn green" onclick="approveWithdraw(${r.id})">✅ Одобрить</button>
-                        <button class="admin-btn red" onclick="rejectWithdraw(${r.id})">❌ Отклонить</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function approveWithdraw(id) {
-            const req = withdrawRequests.find(r => r.id === id);
-            if (!req) return;
-
-            const user = users.find(u => u.username === req.user_id);
-            if (user) {
-                if (!user.history) user.history = [];
-                user.history.unshift({ desc: `Вывод ${req.amount}⭐ на @${req.tg} (одобрен)`, amount: `-${req.amount}`, plus: false });
-            }
-
-            withdrawRequests = withdrawRequests.filter(r => r.id !== id);
-
-            saveAllData();
-            renderWithdrawRequests();
-            updateUI();
-            alert(`✅ Заявка на вывод ${req.amount}⭐ одобрена!`);
-        }
-
-        function rejectWithdraw(id) {
-            const req = withdrawRequests.find(r => r.id === id);
-            if (!req) return;
-
-            const user = users.find(u => u.username === req.user_id);
-            if (user) {
-                user.balance += req.amount;
-                if (!user.history) user.history = [];
-                user.history.unshift({ desc: `Возврат ${req.amount}⭐ (вывод отклонён)`, amount: `+${req.amount}`, plus: true });
-                if (user.username === currentUser.username) {
-                    currentUser.balance = user.balance;
-                }
-            }
-
-            withdrawRequests = withdrawRequests.filter(r => r.id !== id);
-
-            saveAllData();
-            updateUI();
-            renderWithdrawRequests();
-            alert(`❌ Заявка на вывод ${req.amount}⭐ отклонена.`);
-        }
-
-        // ============================================================
-        //  УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ
-        // ============================================================
-        function renderUsers(searchTerm = '') {
-            const container = document.getElementById('usersList');
-            if (!currentUser.is_admin) {
-                container.innerHTML = '';
-                return;
-            }
-
-            let filteredUsers = users;
-            if (searchTerm.trim()) {
-                const term = searchTerm.trim().toLowerCase();
-                filteredUsers = users.filter(u =>
-                    u.username.toLowerCase().includes(term) ||
-                    (u.display_name && u.display_name.toLowerCase().includes(term)) ||
-                    (u.tg && u.tg.toLowerCase().includes(term))
-                );
-            }
-
-            if (filteredUsers.length === 0) {
-                container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;">Пользователи не найдены</div>';
-                return;
-            }
-
-            container.innerHTML = filteredUsers.map(u => `
-                <div class="user-item">
-                    <div class="user-info">
-                        <span class="user-name">${u.display_name || u.username} ${u.is_admin ? '👑' : ''}</span>
-                        <span style="font-size:12px;color:#94a3b8;">@${u.username}</span>
-                        <span class="user-balance">⭐ ${u.balance}</span>
-                        ${u.tg ? `<span style="font-size:12px;color:#94a3b8;">@${u.tg}</span>` : ''}
-                    </div>
-                    <div class="user-actions">
-                        ${u.is_admin ? '<span class="role-badge">Админ</span>' : ''}
-                        <input type="number" id="balanceInput_${u.id}" value="${u.balance}" min="0" />
-                        <button class="admin-btn" onclick="setUserBalance(${u.id})">Изменить</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function setUserBalance(userId) {
-            const input = document.getElementById(`balanceInput_${userId}`);
-            const newBalance = parseInt(input.value);
-            if (isNaN(newBalance) || newBalance < 0) {
-                alert('Введите корректное число!');
-                return;
-            }
-            const user = users.find(u => u.id === userId);
-            if (!user) return;
-            user.balance = newBalance;
-            if (user.id === currentUser.id) {
-                currentUser.balance = newBalance;
-            }
-            saveAllData();
-            updateUI();
-            renderUsers(document.getElementById('userSearchInput').value);
-            alert(`✅ Баланс пользователя ${user.username} изменён на ⭐${newBalance}`);
-        }
-
-        document.getElementById('userSearchInput').addEventListener('input', function() {
-            renderUsers(this.value);
-        });
-
-        // ============================================================
-        //  ЧАТЫ
-        // ============================================================
-        function renderChats() {
-            const container = document.getElementById('chatsList');
-            if (!currentUser.chats || currentUser.chats.length === 0) {
-                container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;">Нет чатов</div>';
-                return;
-            }
-
-            const uniqueChats = [...new Set(currentUser.chats)];
-
-            container.innerHTML = uniqueChats.map(chatKey => {
-                const chat = chats[chatKey];
-                if (!chat) return '';
-                const isSystem = chat.is_system || false;
-                const otherUser = isSystem ? 'Rubi Тех.поддержка' : (chat.users.find(u => u !== currentUser.username) || 'Неизвестно');
-                const messages = chat.messages || [];
-                const lastMsg = messages.length > 0 ? messages[messages.length - 1].text.substring(0, 40) + '...' : 'Нет сообщений';
-                const purchase = chat.purchase ? `${chat.purchase.itemName} (⭐${chat.purchase.price})` : '';
-                const unreadCount = messages.filter(m => m.from !== currentUser.username && m.from !== 'system' && !m.isRead).length;
-                const lastTime = messages.length > 0 ? new Date(messages[messages.length - 1].time).toLocaleTimeString() : '';
-
-                const icon = isSystem ? '⚠️' : '💬';
-
-                return `
-                    <div class="chat-item" onclick="openChat('${chatKey}')">
-                        <div class="chat-info">
-                            <span class="chat-with">${icon} ${otherUser}</span>
-                            <span class="chat-last">${lastMsg}</span>
-                            ${purchase ? `<span class="chat-last" style="color:#3b82f6;">🛒 ${purchase}</span>` : ''}
-                        </div>
-                        <div class="chat-right">
-                            <span class="chat-time">${lastTime}</span>
-                            ${unreadCount > 0 ? `<div class="chat-badge">${unreadCount}</div>` : '<div class="chat-badge read">✓</div>'}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // ============================================================
-        //  ОТКРЫТИЕ ЧАТА
-        // ============================================================
-        function openChat(chatKey) {
-            const chat = chats[chatKey];
-            if (!chat) return;
-
-            currentChatWith = chatKey;
-            const isSystem = chat.is_system || false;
-            const otherUser = isSystem ? 'Rubi Тех.поддержка' : (chat.users.find(u => u !== currentUser.username) || 'Неизвестно');
-
-            document.getElementById('chatWithUser').textContent = (isSystem ? '⚠️ ' : '💬 ') + otherUser;
-            document.getElementById('chatStatus').textContent = '● онлайн';
-
-            if (chat.messages) {
-                chat.messages.forEach(m => {
-                    if (m.from !== currentUser.username) {
-                        m.isRead = true;
-                    }
-                });
-            }
-
-            saveAllData();
-            renderMessages();
-            document.getElementById('chatWindow').classList.add('active');
-        }
-
-        function closeChatWindow() {
-            document.getElementById('chatWindow').classList.remove('active');
-            currentChatWith = null;
-            renderChats();
-        }
-
-        document.getElementById('chatBackBtn').addEventListener('click', closeChatWindow);
-
-        // ============================================================
-        //  ОТРИСОВКА СООБЩЕНИЙ
-        // ============================================================
-        function renderMessages() {
-            const container = document.getElementById('chatMessages');
-            const chat = chats[currentChatWith];
-            if (!chat || !chat.messages || chat.messages.length === 0) {
-                container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;">Нет сообщений</div>';
-                return;
-            }
-
-            container.innerHTML = chat.messages.map((msg) => {
-                const isMe = msg.from === currentUser.username;
-                const isSystem = msg.isSystem || false;
-                const time = msg.time ? new Date(msg.time).toLocaleTimeString() : '';
-                const isReview = msg.isReview || false;
-
-                let msgClass = 'msg ';
-                if (isSystem) msgClass += 'system';
-                else if (isMe) msgClass += 'me';
-                else msgClass += 'other';
-
-                const formattedText = msg.text.replace(/\n/g, '<br>');
-
-                let statusHtml = '';
-                if (isMe && !isSystem) {
-                    const isRead = msg.isRead || false;
-                    statusHtml = `<span class="msg-status ${isRead ? 'read' : ''}">${isRead ? '✓✓' : '✓'}</span>`;
-                }
-
-                return `
-                    <div class="${msgClass}">
-                        ${isSystem ? '🛟 ' : ''}${isReview ? '⭐ ' : ''}${formattedText}
-                        <span class="msg-time">${time} ${statusHtml}</span>
-                    </div>
-                `;
-            }).join('');
-
-            container.scrollTop = container.scrollHeight;
-        }
-
-        // ============================================================
-        //  ОТПРАВКА СООБЩЕНИЯ
-        // ============================================================
-        document.getElementById('chatSendBtn').addEventListener('click', sendMessage);
-        document.getElementById('chatInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') sendMessage();
-        });
-
-        function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            if (!text || !currentChatWith) return;
-
-            const chat = chats[currentChatWith];
-            if (!chat) return;
-
-            if (!chat.messages) chat.messages = [];
-            chat.messages.push({
-                from: currentUser.username,
-                text: text,
-                time: new Date().toISOString(),
-                isReview: false,
-                isSystem: false,
-                isRead: false
-            });
-
-            input.value = '';
-            renderMessages();
-            saveAllData();
-            renderChats();
-        }
-
-        // ============================================================
-        //  НАСТРОЙКИ ПРОФИЛЯ
-        // ============================================================
-        const settingsModal = document.getElementById('settingsModal');
-        const settingsNameInput = document.getElementById('settingsNameInput');
-        const settingsUsernameInput = document.getElementById('settingsUsernameInput');
-        const settingsMsg = document.getElementById('settingsMsg');
-
-        document.getElementById('profileSettingsBtn').addEventListener('click', function() {
-            settingsNameInput.value = currentUser.display_name || currentUser.username;
-            settingsUsernameInput.value = currentUser.username;
-            settingsMsg.textContent = '';
-            settingsModal.classList.add('active');
-        });
-
-        document.getElementById('settingsCancelBtn').addEventListener('click', function() {
-            settingsModal.classList.remove('active');
-        });
-
-        document.getElementById('settingsSaveBtn').addEventListener('click', function() {
-            const newName = settingsNameInput.value.trim();
-            const newUsername = settingsUsernameInput.value.trim().toLowerCase();
-
-            if (!newName) {
-                settingsMsg.textContent = '❌ Введите имя!';
-                settingsMsg.style.color = '#dc2626';
-                return;
-            }
-
-            if (!newUsername) {
-                settingsMsg.textContent = '❌ Введите юзернейм!';
-                settingsMsg.style.color = '#dc2626';
-                return;
-            }
-
-            if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
-                settingsMsg.textContent = '❌ Юзернейм может содержать только буквы, цифры и подчёркивание!';
-                settingsMsg.style.color = '#dc2626';
-                return;
-            }
-
-            const oldUsername = currentUser.username;
-
-            if (newUsername !== oldUsername) {
-                if (users.find(u => u.username === newUsername)) {
-                    settingsMsg.textContent = '❌ Этот юзернейм уже занят!';
-                    settingsMsg.style.color = '#dc2626';
-                    return;
-                }
-
-                for (const key in chats) {
-                    const chat = chats[key];
-                    if (chat.users) {
-                        const index = chat.users.indexOf(oldUsername);
-                        if (index !== -1) {
-                            chat.users[index] = newUsername;
-                        }
-                    }
-                    if (chat.messages) {
-                        chat.messages.forEach(m => {
-                            if (m.from === oldUsername) m.from = newUsername;
-                        });
-                    }
-                }
-
-                approvedGoods.forEach(g => {
-                    if (g.seller === oldUsername) g.seller = newUsername;
-                });
-                moderationQueue.forEach(m => {
-                    if (m.seller === oldUsername) m.seller = newUsername;
-                });
-                withdrawRequests.forEach(r => {
-                    if (r.user_id === oldUsername) r.user_id = newUsername;
-                });
-
-                users.forEach(u => {
-                    if (u.chats) {
-                        u.chats = u.chats.map(c => c.replace(oldUsername, newUsername));
-                    }
-                });
-
-                const newChats = {};
-                for (const key in chats) {
-                    const newKey = key.replace(oldUsername, newUsername);
-                    newChats[newKey] = chats[key];
-                }
-                chats = newChats;
-
-                currentUser.username = newUsername;
-                if (currentUser.chats) {
-                    currentUser.chats = currentUser.chats.map(c => c.replace(oldUsername, newUsername));
-                }
-            }
-
-            currentUser.display_name = newName;
-
-            const user = users.find(u => u.id === currentUser.id);
-            if (user) {
-                user.username = currentUser.username;
-                user.display_name = currentUser.display_name;
-            }
-
-            settingsModal.classList.remove('active');
-            updateProfileUI();
-            saveAllData();
-            renderAll();
-            alert(`✅ Профиль обновлён!`);
-        });
-
-        // ============================================================
-        //  ПРОФИЛЬ — АКТИВАЦИЯ ПРОМОКОДА
-        // ============================================================
-        document.getElementById('profilePromoBtn').addEventListener('click', function() {
-            const input = document.getElementById('profilePromoInput');
-            const code = input.value.trim().toUpperCase();
-            const msg = document.getElementById('profilePromoMessage');
-
-            if (!code) {
-                msg.textContent = '❌ Введите промокод';
-                msg.style.color = '#dc2626';
-                return;
-            }
-
-            const promo = promoCodes.find(p =>
-                p.code === code &&
-                p.used < p.limit_count &&
-                (p.expires ? new Date(p.expires) > new Date() : true)
-            );
-
-            if (!promo) {
-                msg.textContent = '❌ Неверный или истёкший промокод';
-                msg.style.color = '#dc2626';
-                return;
-            }
-
-            if (promo.type === 'bonus') {
-                currentUser.balance += promo.value;
-                if (!currentUser.history) currentUser.history = [];
-                currentUser.history.unshift({ desc: `Бонус по промокоду ${promo.code}`, amount: `+${promo.value}`, plus: true });
-                promo.used += 1;
-
-                msg.textContent = `✅ +${promo.value}⭐ зачислено!`;
-                msg.style.color = '#16a34a';
-                input.value = '';
-                updateUI();
-                renderPromos();
-                saveAllData();
-            } else if (promo.type === 'percent') {
-                msg.textContent = `ℹ️ Промокод на скидку ${promo.value}% — используйте при покупке!`;
-                msg.style.color = '#f59e0b';
-            }
-        });
-
-        // ============================================================
-        //  ОБНОВЛЕНИЕ UI
-        // ============================================================
-        function updateUI() {
-            if (!currentUser) return;
-            document.getElementById('balanceDisplay').innerHTML = `⭐ ${currentUser.balance}`;
-
-            const historyContainer = document.getElementById('historyList');
-            const history = currentUser.history || [];
-            if (history.length === 0) {
-                historyContainer.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:12px;">История пуста</div>';
-            } else {
-                historyContainer.innerHTML = history.map(h => `
-                    <div class="history-item">
-                        <span>${h.desc}</span>
-                        <span class="amount ${h.plus ? 'plus' : 'minus'}">${h.amount} ⭐</span>
-                    </div>
-                `).join('');
-            }
-        }
-
-        function renderAll() {
-            renderGames();
-            renderFeed();
-            renderLots();
-            renderModeration();
-            renderPromos();
-            renderChats();
-            renderWithdrawRequests();
-            renderAdminGoods();
-            if (currentUser && currentUser.is_admin) {
-                renderUsers(document.getElementById('userSearchInput')?.value || '');
-            }
-        }
-
-        // ============================================================
-        //  НАВИГАЦИЯ
-        // ============================================================
-        const navItems = document.querySelectorAll('.nav-item');
-        const pages = {
-            pageHome: document.getElementById('pageHome'),
-            pageSell: document.getElementById('pageSell'),
-            pageAdmin: document.getElementById('pageAdmin'),
-            pageChats: document.getElementById('pageChats'),
-            pageFinance: document.getElementById('pageFinance'),
-            pageProfile: document.getElementById('pageProfile')
-        };
-
-        navItems.forEach(item => {
-            item.addEventListener('click', function() {
-                const pageId = this.dataset.page;
-                navItems.forEach(n => n.classList.remove('active'));
-                this.classList.add('active');
-                Object.values(pages).forEach(p => p.classList.remove('active'));
-                if (pages[pageId]) pages[pageId].classList.add('active');
-                document.getElementById('mainContent').scrollTop = 0;
-                if (pageId !== 'pageHome') {
-                    closeGameGoods();
-                }
-                if (pageId === 'pageChats') {
-                    renderChats();
-                }
-                if (pageId === 'pageAdmin') {
-                    renderWithdrawRequests();
-                    renderUsers(document.getElementById('userSearchInput')?.value || '');
-                    renderAdminGoods();
-                }
-            });
-        });
-
-        // ============================================================
-        //  ТЕМА
-        // ============================================================
-        let darkMode = false;
-        const themeToggle = document.getElementById('themeToggle');
-        const themeProfileToggle = document.getElementById('themeProfileToggle');
-
-        function applyTheme() {
-            document.body.classList.toggle('dark', darkMode);
-            document.body.classList.toggle('light', !darkMode);
-            themeToggle.textContent = darkMode ? '☀️' : '🌙';
-            themeProfileToggle.textContent = darkMode ? '🌓 Тема: Тёмная' : '🌓 Тема: Светлая';
-            localStorage.setItem('rubi_theme', darkMode ? 'dark' : 'light');
-        }
-
-        themeToggle.addEventListener('click', () => { darkMode = !darkMode; applyTheme(); });
-        themeProfileToggle.addEventListener('click', () => { darkMode = !darkMode; applyTheme(); });
-Files
-Go to file
-t
-T
-index.html
--2
-/
-index.html
-in
-main
-
-        const savedTheme = localStorage.getItem('rubi_theme');
-        if (savedTheme === 'dark') { darkMode = true; }
-        applyTheme();
-
-        // ============================================================
-        //  ЗАПУСК
-        // ============================================================
-        function init() {
-            loadAllData();
-
-            const savedSession = localStorage.getItem('rubi_session');
-            if (savedSession) {
-                const user = users.find(u => u.username === savedSession);
-                if (user) {
-                    currentUser = user;
-                    initSystemChat();
-                    enterApp();
-                    renderAll();
-                    updateUI();
-                    populateSellGames();
-                    populateAdminGames();
-                    populatePromoGames();
-                    populateAdminGoodsGames();
-                }
-            }
-
-            if (!currentUser) {
-                authOverlay.classList.add('active');
-            }
-
-            console.log('🔥 Rubi готов!');
-            console.log('👤 Админ: admin / admin123');
-            console.log('👤 Пользователь: user / user123');
-            console.log('📢 Подписывайтесь на канал: t.me/rubishopgame');
-        }
-
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
+  </main>
+
+  <!-- НИЖНЯЯ НАВИГАЦИЯ -->
+  <nav class="bottom-nav">
+    <a href="#" class="active" onclick="showPage('main')"><i class="fas fa-home"></i> Главная</a>
+    <a href="#" onclick="showPage('sell')"><i class="fas fa-plus-circle"></i> Продать</a>
+    <a href="#" onclick="showPage('chats')"><i class="fas fa-comments"></i> Чаты</a>
+    <a href="#" onclick="showPage('finance')"><i class="fas fa-wallet"></i> Финансы</a>
+    <a href="#" onclick="showPage('profile')"><i class="fas fa-user"></i> Профиль</a>
+  </nav>
+
+  <!-- МОДАЛЬНОЕ ОКНО -->
+  <div class="modal-overlay" id="buyModal">
+    <div class="modal">
+      <button class="close-modal" onclick="closeModal()">&times;</button>
+      <h3 id="modal-title">Товар</h3>
+      <div class="item-detail" id="modal-desc">Описание товара</div>
+      <div class="price-detail"><i class="fas fa-gem"></i> <span id="modal-price">0</span> рубинов</div>
+      <div class="btn-group">
+        <button class="btn-primary" onclick="confirmPurchase()"><i class="fas fa-check-circle"></i> Подтвердить покупку</button>
+        <button class="btn-chat" onclick="openChat()"><i class="fas fa-comment"></i> Открыть чат с продавцом</button>
+      </div>
+      <div class="feedback-section">
+        <textarea id="feedback-text" placeholder="Оставьте отзыв о товаре (по желанию)"></textarea>
+        <button class="btn-feedback" onclick="submitFeedback()"><i class="fas fa-star"></i> Оставить отзыв</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== ДАННЫЕ =====
+    const catalog = {
+      games: [
+        { id: 'brawl', name: 'Brawl Stars', icon: 'fa-bolt', items: [
+          { name: 'Аккаунт 10k кубков', desc: 'Легендарные бойцы', price: 45 },
+          { name: '1000 гемов', desc: 'Пополнение', price: 30 },
+          { name: 'Скин на Мегу', desc: 'Ограниченный скин', price: 15 },
+        ]},
+        { id: 'standoff', name: 'Standoff 2', icon: 'fa-crosshairs', items: [
+          { name: 'Аккаунт с ножами', desc: '5 ножей + скины', price: 120 },
+          { name: '1000 монет', desc: 'Игровая валюта', price: 20 },
+        ]},
+        { id: 'dota2', name: 'Dota 2', icon: 'fa-skull-crossbones', items: [
+          { name: 'Аркана на PA', desc: 'Красная аркана', price: 80 },
+          { name: '1000 осколков', desc: 'Внутриигровая валюта', price: 10 },
+        ]},
+        { id: 'csgo', name: 'CS:GO (CS2)', icon: 'fa-bomb', items: [
+          { name: 'AK-47 Redline', desc: 'FT, стикеры', price: 55 },
+          { name: 'AWP Asiimov', desc: 'FT, хороший флоат', price: 120 },
+        ]},
+        { id: 'pubg', name: 'PUBG Mobile', icon: 'fa-plane', items: [
+          { name: 'UC 1000', desc: 'Внутриигровая валюта', price: 15 },
+          { name: 'Скин на оружие', desc: 'Редкий скин', price: 25 },
+        ]},
+        { id: 'minecraft', name: 'Minecraft', icon: 'fa-cube', items: [
+          { name: 'VIP доступ', desc: 'На 30 дней', price: 18 },
+          { name: 'Кейс с скинами', desc: '5 редких скинов', price: 12 },
+        ]},
+      ],
+      apps: [
+        { id: 'telegram', name: 'Telegram', icon: 'fa-paper-plane', items: [
+          { name: 'Premium подписка', desc: 'На 1 месяц', price: 10 },
+          { name: 'Telegram Stars', desc: '500 звёзд', price: 25 },
+        ]},
+        { id: 'tiktok', name: 'TikTok', icon: 'fa-tiktok', items: [
+          { name: '1000 лайков', desc: 'Моментально', price: 8 },
+          { name: '100 подписчиков', desc: 'Реальные аккаунты', price: 15 },
+        ]},
+        { id: 'chatgpt', name: 'ChatGPT', icon: 'fa-robot', items: [
+          { name: 'API ключ', desc: 'На 500 запросов', price: 20 },
+          { name: 'GPT-4 доступ', desc: 'На 7 дней', price: 12 },
+        ]},
+        { id: 'spotify', name: 'Spotify', icon: 'fa-music', items: [
+          { name: 'Premium месяц', desc: 'Индивидуальный', price: 10 },
+          { name: 'Плейлист подборка', desc: '500 треков', price: 5 },
+        ]},
+        { id: 'discord', name: 'Discord', icon: 'fa-discord', items: [
+          { name: 'Nitro месяц', desc: 'Бесплатная доставка', price: 15 },
+          { name: 'Буст сервера', desc: '1 буст', price: 8 },
+        ]},
+        { id: 'notion', name: 'Notion', icon: 'fa-tasks', items: [
+          { name: 'Шаблон проекта', desc: 'Готовый набор', price: 6 },
+          { name: 'AI интеграция', desc: 'На 30 дней', price: 18 },
+        ]},
+      ]
+    };
+
+    let myItems = [];
+    let currentItem = null;
+
+    // ===== ОТОБРАЖЕНИЕ =====
+    function renderCatalog() {
+      renderGrid('games-grid', catalog.games, 'games');
+      renderGrid('apps-grid', catalog.apps, 'apps');
+    }
+
+    function renderGrid(id, items, type) {
+      const container = document.getElementById(id);
+      container.innerHTML = items.map(item => {
+        const minPrice = Math.min(...item.items.map(i => i.price));
+        return `
+          <div class="game-card" onclick="openItems('${type}', '${item.id}')">
+            <div class="icon"><i class="fas ${item.icon}"></i></div>
+            <div class="name">${item.name}</div>
+            <div class="meta">${item.items.length} товаров</div>
+            <div class="price"><i class="fas fa-gem"></i> ${minPrice} <span class="from">рубинов</span></div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openItems(type, id) {
+      const category = type === 'games' ? catalog.games : catalog.apps;
+      const game = category.find(g => g.id === id);
+      if (!game) return;
+
+      document.getElementById('items-title').textContent = game.name;
+      const grid = document.getElementById('items-grid');
+      grid.innerHTML = game.items.map(item => `
+        <div class="item-card">
+          <div class="item-name">${item.name}</div>
+          <div class="item-desc">${item.desc}</div>
+          <div class="item-price"><i class="fas fa-gem"></i> ${item.price}</div>
+          <button class="btn-buy" onclick="openModal('${item.name}', '${item.desc}', ${item.price})">Купить</button>
+        </div>
+      `).join('');
+
+      showPage('items');
+    }
+
+    // ===== МОДАЛЬНОЕ ОКНО =====
+    function openModal(name, desc, price) {
+      currentItem = { name, desc, price };
+      document.getElementById('modal-title').textContent = name;
+      document.getElementById('modal-desc').textContent = desc;
+      document.getElementById('modal-price').textContent = price;
+      document.getElementById('buyModal').classList.add('active');
+      document.getElementById('feedback-text').value = '';
+    }
+
+    function closeModal() {
+      document.getElementById('buyModal').classList.remove('active');
+    }
+
+    function confirmPurchase() {
+      alert(`✅ Покупка "${currentItem.name}" подтверждена!\nСписано: ${currentItem.price} 💎`);
+      closeModal();
+    }
+
+    function openChat() {
+      alert(`💬 Чат с продавцом товара "${currentItem.name}" открыт!`);
+      closeModal();
+      showPage('chats');
+    }
+
+    function submitFeedback() {
+      const text = document.getElementById('feedback-text').value.trim();
+      if (text) {
+        alert(`⭐ Спасибо за отзыв!\n"${text}"`);
+      } else {
+        alert('📝 Вы можете оставить отзыв позже в чате с продавцом.');
+      }
+      closeModal();
+    }
+
+    // Закрытие модалки по клику вне окна
+    document.getElementById('buyModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    // ===== ПРОДАЖА =====
+    function populateSellSelects() {
+      const select = document.getElementById('sell-category');
+      const all = [...catalog.games, ...catalog.apps];
+      select.innerHTML = `<option value="">— выберите —</option>` + 
+        all.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+
+    document.getElementById('sell-category')?.addEventListener('change', function() {
+      const id = this.value;
+      const all = [...catalog.games, ...catalog.apps];
+      const cat = all.find(c => c.id === id);
+      const itemSelect = document.getElementById('sell-item');
+      if (!cat) {
+        itemSelect.innerHTML = `<option value="">— сначала выберите игру —</option>`;
+        return;
+      }
+      itemSelect.innerHTML = `<option value="">— выберите товар —</option>` +
+        cat.items.map(i => `<option value="${i.name}">${i.name}</option>`).join('');
+    });
+
+    function sellItem() {
+      const cat = document.getElementById('sell-category');
+      const item = document.getElementById('sell-item');
+      const desc = document.getElementById('sell-desc');
+      const price = document.getElementById('sell-price');
+
+      if (!cat.value || !item.value || !price.value) {
+        alert('⚠️ Заполните все поля!');
+        return;
+      }
+
+      myItems.push({
+        name: item.value,
+        desc: desc.value || 'Без описания',
+        price: parseInt(price.value),
+        category: cat.options[cat.selectedIndex].text
+      });
+
+      alert('✅ Товар выставлен на продажу!');
+      cat.value = '';
+      document.getElementById('sell-item').innerHTML = `<option value="">— сначала выберите игру —</option>`;
+      desc.value = '';
+      price.value = '';
+      renderMyItems();
+    }
+
+    function renderMyItems() {
+      const container = document.getElementById('my-items-list');
+      if (myItems.length === 0) {
+        container.innerHTML = '<div class="empty">Нет товаров</div>';
+        return;
+      }
+      container.innerHTML = myItems.map((item, i) => `
+        <div style="background:#1a253b; padding:12px; border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid #2a3f6a;">
+          <div>
+            <strong>${item.name}</strong>
+            <div style="font-size:13px; color:#8899bb;">${item.category} • ${item.desc}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="color:#ffb3c6; font-weight:700;"><i class="fas fa-gem"></i> ${item.price}</span>
+            <button onclick="removeItem(${i})" style="background:#ff4d6d; border:none; color:#fff; padding:4px 10px; border-radius:30px; cursor:pointer;">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function removeItem(index) {
+      myItems.splice(index, 1);
+      renderMyItems();
+    }
+
+    // ===== НАВИГАЦИЯ =====
+    function showPage(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById(`page-${page}`).classList.remove('hidden');
+      document.querySelectorAll('.bottom-nav a').forEach(a => a.classList.remove('active'));
+      const navMap = { main:0, sell:1, chats:2, finance:3, profile:4 };
+      if (navMap[page] !== undefined) {
+        document.querySelectorAll('.bottom-nav a')[navMap[page]]?.classList.add('active');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function filterCategory(type) {
+      const all = [...catalog.games, ...catalog.apps];
+      if (type === 'games') {
+        openItems('games', all[0].id);
+      } else {
+        openItems('apps', catalog.apps[0].id);
+      }
+    }
+
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
+    renderCatalog();
+    populateSellSelects();
+    renderMyItems();
+
+    document.querySelectorAll('.withdraw-grid .amount-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.withdraw-grid .amount-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+  </script>
 </body>
 </html>
