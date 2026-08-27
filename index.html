@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Rubi</title>
 
-    <!-- Подключаем Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <style>
         /* ============================================================ */
         /*  ГЛОБАЛЬНЫЕ СБРОСЫ                                            */
@@ -1584,7 +1581,6 @@
             text-align: center;
         }
 
-        /* --- Баннер канала --- */
         .profile-banner {
             display: block;
             background: linear-gradient(135deg, #3b82f6, #8b5cf6);
@@ -1626,7 +1622,6 @@
             opacity: 0.7;
         }
 
-        /* --- Комиссия --- */
         .profile-commission {
             background: #ffffff;
             border-radius: 18px;
@@ -1674,7 +1669,6 @@
             color: #60a5fa;
         }
 
-        /* --- Пополнение --- */
         .profile-deposit {
             background: #ffffff;
             border-radius: 18px;
@@ -1719,7 +1713,6 @@
             color: #60a5fa;
         }
 
-        /* --- Инструкция --- */
         .profile-instruction {
             background: #ffffff;
             border-radius: 18px;
@@ -1794,7 +1787,6 @@
             transform: scale(1.01);
         }
 
-        /* --- Остальное --- */
         .profile-avatar {
             width: 80px;
             height: 80px;
@@ -1952,9 +1944,6 @@
             display: none;
         }
 
-        /* ============================================================ */
-        /*  АДАПТИВ                                                     */
-        /* ============================================================ */
         @media (max-width: 640px) {
             .app-wrapper {
                 padding: 0 12px;
@@ -2257,6 +2246,7 @@
                 <div class="withdraw-section">
                     <h4>💳 Вывод звёзд</h4>
                     <input class="withdraw-input" id="withdrawTg" placeholder="@username (ваш Telegram)" />
+                    <input class="withdraw-input" id="withdrawAmount" placeholder="Сумма" type="number" min="100" />
                     <div class="withdraw-presets" id="withdrawPresets">
                         <button class="preset-btn" data-amount="100">100</button>
                         <button class="preset-btn" data-amount="115">115</button>
@@ -2284,7 +2274,6 @@
             <div class="page" id="pageProfile">
                 <div class="profile-card">
 
-                    <!-- БАННЕР КАНАЛА -->
                     <a href="https://t.me/rubishopgame" target="_blank" class="profile-banner">
                         <div class="banner-content">
                             <div class="banner-icon">📢</div>
@@ -2296,7 +2285,6 @@
                         </div>
                     </a>
 
-                    <!-- КОМИССИЯ -->
                     <div class="profile-commission">
                         <div class="commission-icon">💸</div>
                         <div class="commission-text">
@@ -2306,7 +2294,6 @@
                         </div>
                     </div>
 
-                    <!-- ПОПОЛНЕНИЕ БАЛАНСА -->
                     <div class="profile-deposit">
                         <div class="deposit-icon">💰</div>
                         <div class="deposit-text">
@@ -2315,7 +2302,6 @@
                         </div>
                     </div>
 
-                    <!-- ИНСТРУКЦИЯ ПО ПОПОЛНЕНИЮ -->
                     <div class="profile-instruction">
                         <div class="instruction-title">📖 Как пополнить баланс:</div>
                         <div class="instruction-steps">
@@ -2341,7 +2327,6 @@
                         </button>
                     </div>
 
-                    <!-- СТАРЫЕ НАСТРОЙКИ -->
                     <div class="profile-avatar" id="profileAvatar">R</div>
                     <div class="profile-name-wrap">
                         <span class="profile-name" id="profileName">Rubi</span>
@@ -2403,11 +2388,11 @@
             <div style="text-align:center;color:#94a3b8;font-size:14px;margin-bottom:4px;" id="reviewItemName">Товар</div>
             <div class="stars-label" id="reviewStarsLabel">Выберите оценку</div>
             <div class="stars-select" id="reviewStars">
-                <span data-star="1" onclick="setReviewStars(1)">⭐</span>
-                <span data-star="2" onclick="setReviewStars(2)">⭐</span>
-                <span data-star="3" onclick="setReviewStars(3)">⭐</span>
-                <span data-star="4" onclick="setReviewStars(4)">⭐</span>
-                <span data-star="5" onclick="setReviewStars(5)">⭐</span>
+                <span data-star="1">⭐</span>
+                <span data-star="2">⭐</span>
+                <span data-star="3">⭐</span>
+                <span data-star="4">⭐</span>
+                <span data-star="5">⭐</span>
             </div>
             <textarea id="reviewText" placeholder="Напишите ваш отзыв..."></textarea>
             <div class="modal-actions">
@@ -2457,10 +2442,8 @@
 
     <script>
         // ============================================================
-        //  ПОДКЛЮЧЕНИЕ К SUPABASE (ВАШИ ДАННЫЕ)
+        //  ПОЛНАЯ РАБОЧАЯ ВЕРСИЯ — НА LOCALSTORAGE
         // ============================================================
-        const SUPABASE_URL = 'https://kiesefkealbagydlizld.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpZXNlZmtlYWxiYWd5ZGxpemxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDE2MDIsImV4cCI6MjEwMjkxNzYwMn0.CfngCjg_Ek8PWLxXtwQCqK7sjPsTA849npapg1Lba64';
 
         // ============================================================
         //  ПЕРЕМЕННЫЕ
@@ -2483,161 +2466,162 @@
         let currentChatWith = null;
 
         // ============================================================
-        //  ФУНКЦИЯ ДЛЯ ВЫБОРА ЗВЁЗД В ОТЗЫВЕ
+        //  ЗАГРУЗКА ДАННЫХ ИЗ LOCALSTORAGE
         // ============================================================
-        function setReviewStars(count) {
-            selectedReviewStars = count;
-            const stars = document.querySelectorAll('#reviewStars span');
-            stars.forEach((el, index) => {
-                el.classList.toggle('active', index < count);
-            });
-            const label = document.getElementById('reviewStarsLabel');
-            if (count === 1) label.textContent = '⭐ Плохо';
-            else if (count === 2) label.textContent = '⭐⭐ Ниже среднего';
-            else if (count === 3) label.textContent = '⭐⭐⭐ Средне';
-            else if (count === 4) label.textContent = '⭐⭐⭐⭐ Хорошо';
-            else if (count === 5) label.textContent = '⭐⭐⭐⭐⭐ Отлично!';
-            else label.textContent = 'Выберите оценку';
-        }
-
-        // ============================================================
-        //  ЗАГРУЗКА ДАННЫХ ИЗ SUPABASE (с проверкой ошибок)
-        // ============================================================
-        async function loadAllData() {
+        function loadAllData() {
             try {
                 // Загружаем пользователей
-                const { data: usersData, error: usersError } = await supabase
-                    .from('users')
-                    .select('*');
-                if (!usersError && usersData && usersData.length > 0) {
-                    users = usersData;
-                    console.log('✅ Загружено пользователей:', users.length);
+                const savedUsers = localStorage.getItem('rubi_users');
+                if (savedUsers) {
+                    users = JSON.parse(savedUsers);
                 } else {
-                    console.log('⚠️ Пользователи не загружены, используем localStorage');
-                    loadFromLocalStorage();
+                    users = [
+                        { 
+                            id: 1, 
+                            username: 'admin', 
+                            display_name: 'Администратор', 
+                            password: 'admin123', 
+                            balance: 9999, 
+                            is_admin: true, 
+                            tg: '', 
+                            chats: [], 
+                            history: [] 
+                        },
+                        { 
+                            id: 2, 
+                            username: 'user', 
+                            display_name: 'Пользователь', 
+                            password: 'user123', 
+                            balance: 500, 
+                            is_admin: false, 
+                            tg: '', 
+                            chats: [], 
+                            history: [] 
+                        }
+                    ];
+                    localStorage.setItem('rubi_users', JSON.stringify(users));
                 }
 
                 // Загружаем игры
-                const { data: gamesDataRaw, error: gamesError } = await supabase
-                    .from('games')
-                    .select('*');
-                if (!gamesError && gamesDataRaw && gamesDataRaw.length > 0) {
-                    gamesData = gamesDataRaw;
-                    console.log('✅ Загружено игр:', gamesData.length);
-                    // Загружаем товары игр
-                    const { data: itemsData, error: itemsError } = await supabase
-                        .from('game_items')
-                        .select('*');
-                    if (!itemsError && itemsData) {
-                        gamesData.forEach(game => {
-                            game.items = itemsData.filter(item => item.game_id === game.id).map(item => item
-                            .item_name);
-                        });
-                        console.log('✅ Загружено товаров игр:', itemsData.length);
-                    }
+                const savedGames = localStorage.getItem('rubi_games');
+                if (savedGames) {
+                    gamesData = JSON.parse(savedGames);
+                } else {
+                    gamesData = [
+                        { 
+                            id: 'csgo', 
+                            name: 'CS:GO', 
+                            color: '#f59e0b', 
+                            items: ['Ключ CS:GO', 'Скин AK-47', 'Скин M4A4', 'Операционный пропуск'] 
+                        },
+                        { 
+                            id: 'dota2', 
+                            name: 'Dota 2', 
+                            color: '#ef4444', 
+                            items: ['Аркана', 'Набор скинов', 'Боевой пропуск'] 
+                        },
+                        { 
+                            id: 'minecraft', 
+                            name: 'Minecraft', 
+                            color: '#10b981', 
+                            items: ['Лицензионный ключ', 'Набор скинов', 'Доступ на сервер'] 
+                        },
+                        { 
+                            id: 'gta5', 
+                            name: 'GTA V', 
+                            color: '#3b82f6', 
+                            items: ['Лицензионный ключ', 'Внутриигровая валюта', 'Кастомный аккаунт'] 
+                        }
+                    ];
+                    localStorage.setItem('rubi_games', JSON.stringify(gamesData));
                 }
 
                 // Загружаем популярные товары
-                const { data: approvedData, error: approvedError } = await supabase
-                    .from('approved_goods')
-                    .select('*');
-                if (!approvedError && approvedData) {
-                    approvedGoods = approvedData;
-                    console.log('✅ Загружено популярных товаров:', approvedGoods.length);
+                const savedApproved = localStorage.getItem('rubi_approved');
+                if (savedApproved) {
+                    approvedGoods = JSON.parse(savedApproved);
+                } else {
+                    approvedGoods = [
+                        { game_id: 'csgo', item_name: 'Ключ CS:GO', price: 25, seller: 'Rubi', description: 'Официальный ключ' },
+                        { game_id: 'dota2', item_name: 'Аркана', price: 50, seller: 'Rubi', description: 'Легендарный скин' },
+                        { game_id: 'minecraft', item_name: 'Лицензионный ключ', price: 35, seller: 'Rubi', description: 'Полная версия' }
+                    ];
+                    localStorage.setItem('rubi_approved', JSON.stringify(approvedGoods));
                 }
 
                 // Загружаем модерацию
-                const { data: modData, error: modError } = await supabase
-                    .from('moderation_queue')
-                    .select('*');
-                if (!modError && modData) {
-                    moderationQueue = modData;
-                    console.log('✅ Загружено товаров на модерации:', moderationQueue.length);
+                const savedModeration = localStorage.getItem('rubi_moderation');
+                if (savedModeration) {
+                    moderationQueue = JSON.parse(savedModeration);
+                } else {
+                    moderationQueue = [];
+                    localStorage.setItem('rubi_moderation', JSON.stringify(moderationQueue));
                 }
 
                 // Загружаем промокоды
-                const { data: promoData, error: promoError } = await supabase
-                    .from('promo_codes')
-                    .select('*');
-                if (!promoError && promoData) {
-                    promoCodes = promoData;
-                    console.log('✅ Загружено промокодов:', promoCodes.length);
-                }
-
-                // Загружаем заявки на вывод
-                const { data: withdrawData, error: withdrawError } = await supabase
-                    .from('withdraw_requests')
-                    .select('*');
-                if (!withdrawError && withdrawData) {
-                    withdrawRequests = withdrawData;
-                    console.log('✅ Загружено заявок на вывод:', withdrawRequests.length);
+                const savedPromos = localStorage.getItem('rubi_promos');
+                if (savedPromos) {
+                    promoCodes = JSON.parse(savedPromos);
+                } else {
+                    promoCodes = [
+                        { code: 'WELCOME', type: 'bonus', value: 50, limit_count: 10, used: 0, game_id: null, expires: null },
+                        { code: 'SUMMER25', type: 'percent', value: 25, limit_count: 5, used: 0, game_id: null, expires: '2026-12-31' }
+                    ];
+                    localStorage.setItem('rubi_promos', JSON.stringify(promoCodes));
                 }
 
                 // Загружаем чаты
-                const { data: chatsData, error: chatsError } = await supabase
-                    .from('chats')
-                    .select('*');
-                if (!chatsError && chatsData) {
+                const savedChats = localStorage.getItem('rubi_chats');
+                if (savedChats) {
+                    chats = JSON.parse(savedChats);
+                } else {
                     chats = {};
-                    chatsData.forEach(chat => {
-                        chats[chat.id] = chat;
-                    });
-                    console.log('✅ Загружено чатов:', Object.keys(chats).length);
+                    localStorage.setItem('rubi_chats', JSON.stringify(chats));
                 }
 
-                return true;
+                // Загружаем заявки на вывод
+                const savedWithdraw = localStorage.getItem('rubi_withdraw');
+                if (savedWithdraw) {
+                    withdrawRequests = JSON.parse(savedWithdraw);
+                } else {
+                    withdrawRequests = [];
+                    localStorage.setItem('rubi_withdraw', JSON.stringify(withdrawRequests));
+                }
 
+                console.log('✅ Данные загружены из localStorage');
+                console.log('👤 Пользователей:', users.length);
+                console.log('🎮 Игр:', gamesData.length);
+                console.log('🔥 Популярных товаров:', approvedGoods.length);
+                console.log('🎫 Промокодов:', promoCodes.length);
+                
+                return true;
             } catch (e) {
                 console.error('❌ Ошибка загрузки данных:', e);
-                loadFromLocalStorage();
                 return false;
             }
         }
 
         // ============================================================
-        //  ЗАГРУЗКА ИЗ LOCALSTORAGE (ЗАПАСНОЙ ВАРИАНТ)
+        //  СОХРАНЕНИЕ ВСЕХ ДАННЫХ
         // ============================================================
-        function loadFromLocalStorage() {
-            const savedUsers = localStorage.getItem('rubi_users');
-            if (savedUsers) {
-                try { users = JSON.parse(savedUsers); } catch (e) {}
+        function saveAllData() {
+            try {
+                localStorage.setItem('rubi_users', JSON.stringify(users));
+                localStorage.setItem('rubi_games', JSON.stringify(gamesData));
+                localStorage.setItem('rubi_approved', JSON.stringify(approvedGoods));
+                localStorage.setItem('rubi_moderation', JSON.stringify(moderationQueue));
+                localStorage.setItem('rubi_promos', JSON.stringify(promoCodes));
+                localStorage.setItem('rubi_chats', JSON.stringify(chats));
+                localStorage.setItem('rubi_withdraw', JSON.stringify(withdrawRequests));
+                return true;
+            } catch (e) {
+                console.error('❌ Ошибка сохранения:', e);
+                return false;
             }
-
-            const savedGames = localStorage.getItem('rubi_games');
-            if (savedGames) {
-                try { gamesData = JSON.parse(savedGames); } catch (e) {}
-            }
-
-            const savedApproved = localStorage.getItem('rubi_approved');
-            if (savedApproved) {
-                try { approvedGoods = JSON.parse(savedApproved); } catch (e) {}
-            }
-
-            const savedModeration = localStorage.getItem('rubi_moderation');
-            if (savedModeration) {
-                try { moderationQueue = JSON.parse(savedModeration); } catch (e) {}
-            }
-
-            const savedPromos = localStorage.getItem('rubi_promos');
-            if (savedPromos) {
-                try { promoCodes = JSON.parse(savedPromos); } catch (e) {}
-            }
-
-            const savedChats = localStorage.getItem('rubi_chats');
-            if (savedChats) {
-                try { chats = JSON.parse(savedChats); } catch (e) {}
-            }
-
-            const savedWithdraw = localStorage.getItem('rubi_withdraw');
-            if (savedWithdraw) {
-                try { withdrawRequests = JSON.parse(savedWithdraw); } catch (e) {}
-            }
-
-            console.log('📦 Данные загружены из localStorage');
         }
 
         // ============================================================
-        //  АВТОРИЗАЦИЯ (полностью рабочая)
+        //  АВТОРИЗАЦИЯ
         // ============================================================
         const authOverlay = document.getElementById('authOverlay');
         const authLogin = document.getElementById('authLogin');
@@ -2665,7 +2649,6 @@
             }
 
             if (isLoginMode) {
-                // ВХОД
                 const user = users.find(u => u.username === username && u.password === password);
                 if (!user) {
                     showAuthError('Неверное имя пользователя или пароль!');
@@ -2675,17 +2658,16 @@
                 hideAuthError();
                 enterApp();
             } else {
-                // РЕГИСТРАЦИЯ
                 if (users.find(u => u.username === username)) {
                     showAuthError('Пользователь с таким именем уже существует!');
                     return;
                 }
                 const newUser = {
-                    id: users.length > 0 ? Math.max(...users.map(u => u.id || 0)) + 1 : 1,
+                    id: Date.now(),
                     username: username,
                     display_name: username,
                     password: password,
-                    balance: 0,
+                    balance: 10,
                     is_admin: false,
                     tg: '',
                     chats: [],
@@ -2694,8 +2676,7 @@
                 users.push(newUser);
                 currentUser = newUser;
                 hideAuthError();
-                // Сохраняем в localStorage (запасной вариант)
-                localStorage.setItem('rubi_users', JSON.stringify(users));
+                saveAllData();
                 enterApp();
             }
         }
@@ -2719,7 +2700,6 @@
             populatePromoGames();
             populateAdminGoodsGames();
 
-            // Сохраняем сессию
             localStorage.setItem('rubi_session', currentUser.username);
         }
 
@@ -2728,8 +2708,7 @@
             document.getElementById('userBadge').textContent = '👤 ' + (currentUser.display_name || currentUser.username);
             document.getElementById('profileName').textContent = currentUser.display_name || currentUser.username;
             document.getElementById('profileUsername').textContent = '@' + currentUser.username;
-            document.getElementById('profileAvatar').textContent = (currentUser.display_name || currentUser.username).charAt(0)
-                .toUpperCase();
+            document.getElementById('profileAvatar').textContent = (currentUser.display_name || currentUser.username).charAt(0).toUpperCase();
         }
 
         authBtn.addEventListener('click', handleAuth);
@@ -2779,13 +2758,12 @@
             if (currentUser && !currentUser.chats.includes(systemChatKey)) {
                 currentUser.chats.push(systemChatKey);
             }
+            saveAllData();
         }
 
         // ============================================================
-        //  ОСТАЛЬНЫЕ ФУНКЦИИ (для краткости я их сократил, 
-        //  но они полностью рабочие в предыдущей версии)
+        //  РЕНДЕР ИГР
         // ============================================================
-
         function renderGames() {
             const grid = document.getElementById('gamesGrid');
             grid.innerHTML = '';
@@ -2854,13 +2832,12 @@
         }
 
         // ============================================================
-        //  ПОПУЛЯРНЫЕ ТОВАРЫ
+        //  РЕНДЕР ПОПУЛЯРНЫХ ТОВАРОВ
         // ============================================================
         function renderFeed() {
             const container = document.getElementById('goodsFeed');
             if (approvedGoods.length === 0) {
-                container.innerHTML =
-                    '<div style="color:#94a3b8;text-align:center;padding:20px;">Нет товаров. Админ добавит скоро!</div>';
+                container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;">Нет товаров. Админ добавит скоро!</div>';
                 return;
             }
             const show = approvedGoods.slice(0, 20);
@@ -2884,7 +2861,32 @@
         }
 
         // ============================================================
-        //  ПОКУПКА (упрощённая, без Supabase для надёжности)
+        //  ФУНКЦИЯ ВЫБОРА ЗВЁЗД В ОТЗЫВЕ
+        // ============================================================
+        function setReviewStars(count) {
+            selectedReviewStars = count;
+            const stars = document.querySelectorAll('#reviewStars span');
+            stars.forEach((el, index) => {
+                el.classList.toggle('active', index < count);
+            });
+            const label = document.getElementById('reviewStarsLabel');
+            if (count === 1) label.textContent = '⭐ Плохо';
+            else if (count === 2) label.textContent = '⭐⭐ Ниже среднего';
+            else if (count === 3) label.textContent = '⭐⭐⭐ Средне';
+            else if (count === 4) label.textContent = '⭐⭐⭐⭐ Хорошо';
+            else if (count === 5) label.textContent = '⭐⭐⭐⭐⭐ Отлично!';
+            else label.textContent = 'Выберите оценку';
+        }
+
+        // Клик по звёздам в отзыве
+        document.querySelectorAll('#reviewStars span').forEach(el => {
+            el.addEventListener('click', function() {
+                setReviewStars(parseInt(this.dataset.star));
+            });
+        });
+
+        // ============================================================
+        //  ПОКУПКА
         // ============================================================
         function openBuyModal(itemName, finalPrice, originalPrice, gameId, seller) {
             pendingPurchase = { itemName, finalPrice, originalPrice, gameId, seller: seller || 'Продавец' };
@@ -2935,8 +2937,7 @@
                 this.disabled = true;
             } else if (promo.type === 'bonus') {
                 pendingPurchase.appliedPromo = promo;
-                document.getElementById('modalPromoApplied').textContent =
-                    `✅ Промокод активирован! +${promo.value}⭐ после покупки`;
+                document.getElementById('modalPromoApplied').textContent = `✅ Промокод активирован! +${promo.value}⭐ после покупки`;
                 document.getElementById('modalPromoApplied').style.color = '#16a34a';
                 document.getElementById('modalPromoApplied').classList.add('show');
                 this.textContent = '✅ Применён';
@@ -2963,8 +2964,7 @@
 
             if (promo && promo.type === 'bonus') {
                 currentUser.balance += promo.value;
-                currentUser.history.unshift({ desc: `Бонус по промокоду ${promo.code}`, amount: `+${promo.value}`,
-                    plus: true });
+                currentUser.history.unshift({ desc: `Бонус по промокоду ${promo.code}`, amount: `+${promo.value}`, plus: true });
                 promo.used += 1;
                 alert(`🎉 Бонус ${promo.value}⭐ зачислен!`);
             } else if (promo && promo.type === 'percent') {
@@ -3017,9 +3017,7 @@
             document.getElementById('reviewModal').classList.add('active');
 
             updateUI();
-            // Сохраняем в localStorage
-            localStorage.setItem('rubi_users', JSON.stringify(users));
-            localStorage.setItem('rubi_chats', JSON.stringify(chats));
+            saveAllData();
             renderAll();
             alert(`✅ Вы купили "${name}" за ⭐${price}!`);
             pendingPurchase = null;
@@ -3065,7 +3063,7 @@
 
             document.getElementById('reviewModal').classList.remove('active');
             pendingReviewData = null;
-            localStorage.setItem('rubi_chats', JSON.stringify(chats));
+            saveAllData();
             renderChats();
             alert('✅ Спасибо за отзыв!');
         });
@@ -3140,7 +3138,7 @@
             renderLots();
             renderModeration();
             updateUI();
-            localStorage.setItem('rubi_moderation', JSON.stringify(moderationQueue));
+            saveAllData();
             alert(`✅ Товар отправлен на модерацию!`);
         });
 
@@ -3197,8 +3195,17 @@
             populatePromoGames();
             populateAdminGoodsGames();
             renderGames();
-            localStorage.setItem('rubi_games', JSON.stringify(gamesData));
+            saveAllData();
             alert(`✅ Игра "${name}" добавлена!`);
+        });
+
+        // Выбор цвета
+        document.querySelectorAll('.color-option').forEach(el => {
+            el.addEventListener('click', function() {
+                document.querySelectorAll('.color-option').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                selectedColor = this.dataset.color;
+            });
         });
 
         document.getElementById('adminAddItemBtn').addEventListener('click', function() {
@@ -3216,7 +3223,7 @@
             populateSellGames();
             populateAdminGoodsGames();
             renderGames();
-            localStorage.setItem('rubi_games', JSON.stringify(gamesData));
+            saveAllData();
             alert(`✅ Товар "${itemName}" добавлен в "${game.name}"!`);
         });
 
@@ -3266,8 +3273,7 @@
             renderModeration();
             renderAdminGoods();
             updateUI();
-            localStorage.setItem('rubi_approved', JSON.stringify(approvedGoods));
-            localStorage.setItem('rubi_moderation', JSON.stringify(moderationQueue));
+            saveAllData();
             alert(`✅ Товар "${item.item_name}" одобрен!`);
         }
 
@@ -3276,7 +3282,7 @@
             if (!item) return;
             moderationQueue = moderationQueue.filter(m => m.id !== id);
             renderModeration();
-            localStorage.setItem('rubi_moderation', JSON.stringify(moderationQueue));
+            saveAllData();
             alert(`❌ Товар "${item.item_name}" отклонён.`);
         }
 
@@ -3336,7 +3342,7 @@
                 description: 'Популярный товар!'
             });
 
-            localStorage.setItem('rubi_approved', JSON.stringify(approvedGoods));
+            saveAllData();
             renderFeed();
             renderAdminGoods();
             alert(`✅ Товар "${itemName}" добавлен в популярные!`);
@@ -3367,7 +3373,7 @@
         function removeGoods(index) {
             if (!confirm('Удалить этот товар из популярных?')) return;
             approvedGoods.splice(index, 1);
-            localStorage.setItem('rubi_approved', JSON.stringify(approvedGoods));
+            saveAllData();
             renderFeed();
             renderAdminGoods();
             alert('✅ Товар удалён из популярных!');
@@ -3423,9 +3429,7 @@
             document.getElementById('promoExpires').value = '';
 
             renderPromos();
-            renderGames();
-            renderFeed();
-            localStorage.setItem('rubi_promos', JSON.stringify(promoCodes));
+            saveAllData();
             alert(`✅ Промокод "${code}" создан!`);
         });
 
@@ -3470,7 +3474,8 @@
 
         document.getElementById('withdrawBtn').addEventListener('click', function() {
             const tg = document.getElementById('withdrawTg').value.trim();
-            let amount = parseInt(document.getElementById('withdrawAmount')?.value) || selectedWithdrawAmount;
+            const amountInput = document.getElementById('withdrawAmount');
+            let amount = parseInt(amountInput.value) || selectedWithdrawAmount;
 
             if (!tg) {
                 alert('Введите ваш Telegram username!');
@@ -3505,8 +3510,7 @@
 
             currentUser.balance -= amount;
             if (!currentUser.history) currentUser.history = [];
-            currentUser.history.unshift({ desc: `Заявка на вывод ${amount}⭐ на @${tgClean}`, amount: `-${amount}`,
-                plus: false });
+            currentUser.history.unshift({ desc: `Заявка на вывод ${amount}⭐ на @${tgClean}`, amount: `-${amount}`, plus: false });
 
             document.getElementById('withdrawTg').value = '';
             document.getElementById('withdrawAmount').value = '';
@@ -3515,8 +3519,7 @@
 
             updateUI();
             renderWithdrawRequests();
-            localStorage.setItem('rubi_users', JSON.stringify(users));
-            localStorage.setItem('rubi_withdraw', JSON.stringify(withdrawRequests));
+            saveAllData();
             alert(`✅ Заявка на вывод ${amount}⭐ отправлена!`);
         });
 
@@ -3555,14 +3558,12 @@
             const user = users.find(u => u.username === req.user_id);
             if (user) {
                 if (!user.history) user.history = [];
-                user.history.unshift({ desc: `Вывод ${req.amount}⭐ на @${req.tg} (одобрен)`, amount: `-${req.amount}`,
-                    plus: false });
+                user.history.unshift({ desc: `Вывод ${req.amount}⭐ на @${req.tg} (одобрен)`, amount: `-${req.amount}`, plus: false });
             }
 
             withdrawRequests = withdrawRequests.filter(r => r.id !== id);
 
-            localStorage.setItem('rubi_users', JSON.stringify(users));
-            localStorage.setItem('rubi_withdraw', JSON.stringify(withdrawRequests));
+            saveAllData();
             renderWithdrawRequests();
             updateUI();
             alert(`✅ Заявка на вывод ${req.amount}⭐ одобрена!`);
@@ -3576,8 +3577,7 @@
             if (user) {
                 user.balance += req.amount;
                 if (!user.history) user.history = [];
-                user.history.unshift({ desc: `Возврат ${req.amount}⭐ (вывод отклонён)`, amount: `+${req.amount}`,
-                    plus: true });
+                user.history.unshift({ desc: `Возврат ${req.amount}⭐ (вывод отклонён)`, amount: `+${req.amount}`, plus: true });
                 if (user.username === currentUser.username) {
                     currentUser.balance = user.balance;
                 }
@@ -3585,8 +3585,7 @@
 
             withdrawRequests = withdrawRequests.filter(r => r.id !== id);
 
-            localStorage.setItem('rubi_users', JSON.stringify(users));
-            localStorage.setItem('rubi_withdraw', JSON.stringify(withdrawRequests));
+            saveAllData();
             updateUI();
             renderWithdrawRequests();
             alert(`❌ Заявка на вывод ${req.amount}⭐ отклонена.`);
@@ -3647,7 +3646,7 @@
             if (user.id === currentUser.id) {
                 currentUser.balance = newBalance;
             }
-            localStorage.setItem('rubi_users', JSON.stringify(users));
+            saveAllData();
             updateUI();
             renderUsers(document.getElementById('userSearchInput').value);
             alert(`✅ Баланс пользователя ${user.username} изменён на ⭐${newBalance}`);
@@ -3673,18 +3672,12 @@
                 const chat = chats[chatKey];
                 if (!chat) return '';
                 const isSystem = chat.is_system || false;
-                const otherUser = isSystem ? 'Rubi Тех.поддержка' : (chat.users.find(u => u !== currentUser.username) ||
-                    'Неизвестно');
+                const otherUser = isSystem ? 'Rubi Тех.поддержка' : (chat.users.find(u => u !== currentUser.username) || 'Неизвестно');
                 const messages = chat.messages || [];
-                const lastMsg = messages.length > 0 ?
-                    messages[messages.length - 1].text.substring(0, 40) + '...' :
-                    'Нет сообщений';
+                const lastMsg = messages.length > 0 ? messages[messages.length - 1].text.substring(0, 40) + '...' : 'Нет сообщений';
                 const purchase = chat.purchase ? `${chat.purchase.itemName} (⭐${chat.purchase.price})` : '';
-                const unreadCount = messages.filter(m =>
-                    m.from !== currentUser.username && m.from !== 'system' && !m.isRead
-                ).length;
-                const lastTime = messages.length > 0 ?
-                    new Date(messages[messages.length - 1].time).toLocaleTimeString() : '';
+                const unreadCount = messages.filter(m => m.from !== currentUser.username && m.from !== 'system' && !m.isRead).length;
+                const lastTime = messages.length > 0 ? new Date(messages[messages.length - 1].time).toLocaleTimeString() : '';
 
                 const icon = isSystem ? '⚠️' : '💬';
 
@@ -3713,8 +3706,7 @@
 
             currentChatWith = chatKey;
             const isSystem = chat.is_system || false;
-            const otherUser = isSystem ? 'Rubi Тех.поддержка' : (chat.users.find(u => u !== currentUser.username) ||
-                'Неизвестно');
+            const otherUser = isSystem ? 'Rubi Тех.поддержка' : (chat.users.find(u => u !== currentUser.username) || 'Неизвестно');
 
             document.getElementById('chatWithUser').textContent = (isSystem ? '⚠️ ' : '💬 ') + otherUser;
             document.getElementById('chatStatus').textContent = '● онлайн';
@@ -3727,7 +3719,7 @@
                 });
             }
 
-            localStorage.setItem('rubi_chats', JSON.stringify(chats));
+            saveAllData();
             renderMessages();
             document.getElementById('chatWindow').classList.add('active');
         }
@@ -3809,7 +3801,7 @@
 
             input.value = '';
             renderMessages();
-            localStorage.setItem('rubi_chats', JSON.stringify(chats));
+            saveAllData();
             renderChats();
         }
 
@@ -3890,34 +3882,20 @@
 
                 users.forEach(u => {
                     if (u.chats) {
-                        u.chats = u.chats.map(c => {
-                            if (c.includes(oldUsername)) {
-                                return c.replace(oldUsername, newUsername);
-                            }
-                            return c;
-                        });
+                        u.chats = u.chats.map(c => c.replace(oldUsername, newUsername));
                     }
                 });
 
                 const newChats = {};
                 for (const key in chats) {
-                    if (key.includes(oldUsername)) {
-                        const newKey = key.replace(oldUsername, newUsername);
-                        newChats[newKey] = chats[key];
-                    } else {
-                        newChats[key] = chats[key];
-                    }
+                    const newKey = key.replace(oldUsername, newUsername);
+                    newChats[newKey] = chats[key];
                 }
                 chats = newChats;
 
                 currentUser.username = newUsername;
                 if (currentUser.chats) {
-                    currentUser.chats = currentUser.chats.map(c => {
-                        if (c.includes(oldUsername)) {
-                            return c.replace(oldUsername, newUsername);
-                        }
-                        return c;
-                    });
+                    currentUser.chats = currentUser.chats.map(c => c.replace(oldUsername, newUsername));
                 }
             }
 
@@ -3931,11 +3909,7 @@
 
             settingsModal.classList.remove('active');
             updateProfileUI();
-            localStorage.setItem('rubi_users', JSON.stringify(users));
-            localStorage.setItem('rubi_chats', JSON.stringify(chats));
-            localStorage.setItem('rubi_approved', JSON.stringify(approvedGoods));
-            localStorage.setItem('rubi_moderation', JSON.stringify(moderationQueue));
-            localStorage.setItem('rubi_withdraw', JSON.stringify(withdrawRequests));
+            saveAllData();
             renderAll();
             alert(`✅ Профиль обновлён!`);
         });
@@ -3969,8 +3943,7 @@
             if (promo.type === 'bonus') {
                 currentUser.balance += promo.value;
                 if (!currentUser.history) currentUser.history = [];
-                currentUser.history.unshift({ desc: `Бонус по промокоду ${promo.code}`, amount: `+${promo.value}`,
-                    plus: true });
+                currentUser.history.unshift({ desc: `Бонус по промокоду ${promo.code}`, amount: `+${promo.value}`, plus: true });
                 promo.used += 1;
 
                 msg.textContent = `✅ +${promo.value}⭐ зачислено!`;
@@ -3978,10 +3951,7 @@
                 input.value = '';
                 updateUI();
                 renderPromos();
-                renderGames();
-                renderFeed();
-                localStorage.setItem('rubi_users', JSON.stringify(users));
-                localStorage.setItem('rubi_promos', JSON.stringify(promoCodes));
+                saveAllData();
             } else if (promo.type === 'percent') {
                 msg.textContent = `ℹ️ Промокод на скидку ${promo.value}% — используйте при покупке!`;
                 msg.style.color = '#f59e0b';
@@ -4073,10 +4043,8 @@
             localStorage.setItem('rubi_theme', darkMode ? 'dark' : 'light');
         }
 
-        themeToggle.addEventListener('click', () => { darkMode = !darkMode;
-            applyTheme(); });
-        themeProfileToggle.addEventListener('click', () => { darkMode = !darkMode;
-            applyTheme(); });
+        themeToggle.addEventListener('click', () => { darkMode = !darkMode; applyTheme(); });
+        themeProfileToggle.addEventListener('click', () => { darkMode = !darkMode; applyTheme(); });
 
         const savedTheme = localStorage.getItem('rubi_theme');
         if (savedTheme === 'dark') { darkMode = true; }
@@ -4085,11 +4053,9 @@
         // ============================================================
         //  ЗАПУСК
         // ============================================================
-        async function init() {
-            // Загружаем данные из Supabase
-            await loadAllData();
+        function init() {
+            loadAllData();
 
-            // Проверяем сессию
             const savedSession = localStorage.getItem('rubi_session');
             if (savedSession) {
                 const user = users.find(u => u.username === savedSession);
@@ -4116,8 +4082,7 @@
             console.log('📢 Подписывайтесь на канал: t.me/rubishopgame');
         }
 
-        // Запускаем при загрузке страницы
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
-    </html>
+</html>
