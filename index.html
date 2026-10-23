@@ -7,6 +7,7 @@
 html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:'Pixelify Sans',monospace;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none}
 #g{display:block;width:100%;height:100%}
 .hid{display:none!important}
+.in{font:inherit;font-size:18px;width:min(320px,80vw);box-sizing:border-box;margin:6px;padding:8px;background:#222;color:#fff;border:2px solid #000;text-align:center;user-select:text;-webkit-user-select:text}
 .btn{font:inherit;font-size:18px;display:block;width:min(320px,80vw);margin:6px auto;padding:8px;color:#e0e0e0;background:#6f6f6f;border:2px solid #000;box-shadow:inset 2px 2px #a8a8a8,inset -2px -2px #404040;text-shadow:2px 2px #333;cursor:pointer}
 .btn:hover,.btn:active{background:#7b86b8;color:#ffffa0}
 .scr{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;box-sizing:border-box;padding:12px;z-index:5}
@@ -33,6 +34,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:'Pixe
 <div id="ch"></div>
 <div id="dbg" class="hid" style="position:fixed;left:6px;top:calc(112px + env(safe-area-inset-top,0px));font-size:13px;text-shadow:1px 1px #000;white-space:pre"></div>
 <div id="tip" style="position:fixed;left:0;right:0;bottom:calc(var(--z)*1.6 + 40px + env(safe-area-inset-bottom,0px));text-align:center;font-size:17px;text-shadow:2px 2px #000;pointer-events:none;opacity:0;transition:opacity .3s"></div>
+<div id="cl" style="position:fixed;left:8px;bottom:calc(var(--z)*2.4 + 70px);font-size:14px;text-shadow:1px 1px #000;pointer-events:none;max-width:62vw"></div>
+<div id="cb" class="hid" style="position:fixed;left:8px;right:8px;top:calc(120px + env(safe-area-inset-top,0px));display:flex;gap:6px;z-index:4"><input id="ci" class="in" style="flex:1;margin:0;text-align:left" maxlength="100" placeholder="Сообщение"><button class="btn" id="cs" style="width:60px;margin:0">➤</button></div>
 <div id="hud"><div id="st"></div><div id="hb"></div></div>
 <div id="tc" class="hid">
 <div id="js"><div id="kn"></div></div>
@@ -44,14 +47,21 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:'Pixe
 <div class="b" id="bi" style="right:12px;top:calc(12px + env(safe-area-inset-top,0px))">🎒</div>
 <div class="b" id="bm" style="right:78px;top:calc(12px + env(safe-area-inset-top,0px))">☰</div>
 <div class="b" id="bc" style="right:144px;top:calc(12px + env(safe-area-inset-top,0px))">🎥</div>
+<div class="b hid" id="bch" style="right:210px;top:calc(12px + env(safe-area-inset-top,0px))">💬</div>
 </div>
 <div id="menu" class="scr"><h1>MINECRAFT</h1>
-<div id="mb"><button class="btn hid" id="b0">Продолжить</button><button class="btn" id="b1">Выживание</button><button class="btn" id="b2">Творчество</button><button class="btn" id="b3"></button></div>
+<div id="mb"><button class="btn hid" id="b0">Продолжить</button><button class="btn" id="b1">Выживание</button><button class="btn" id="b2">Творчество</button><button class="btn" id="b3"></button><button class="btn" id="b4">Мультиплеер</button></div>
 <p id="help" style="font-size:13px;color:#ccc;max-width:440px;line-height:1.5"></p></div>
+<div id="mpm" class="scr hid" style="background:#000c"><h2>Мультиплеер</h2>
+<input id="mpc" class="in" maxlength="12" placeholder="Код мира (a-z, 0-9)">
+<input id="mpn" class="in" maxlength="12" placeholder="Твой ник">
+<button class="btn" id="mpa">Войти (Творчество)</button><button class="btn" id="mpb">Войти (Выживание)</button><button class="btn" id="mpx">Назад</button>
+<p id="mps" style="font-size:13px;color:#ccc;max-width:420px;line-height:1.5">Первый вводит код и входит, друг вводит тот же код. Нужен интернет у обоих.</p></div>
 <div id="pause" class="scr hid"><h2>Игра приостановлена</h2><button class="btn" id="p1">Вернуться в игру</button><button class="btn" id="p2"></button><button class="btn" id="p3">В главное меню</button></div>
 <div id="death" class="scr hid" style="background:#a00b"><h1 style="font-size:40px;text-shadow:3px 3px #000">Вы умерли!</h1><button class="btn" id="d1">Возродиться</button></div>
 <div id="inv" class="scr hid"><div id="ip"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 const $=i=>document.getElementById(i);
 const W=192,H=64,CS=16,NC=W/CS,SEA=21,N=37;
@@ -232,21 +242,21 @@ const tp=document.createElement('div');tp.style.cssText='min-height:18px;text-al
 const b=document.createElement('button');b.className='btn';b.textContent='Закрыть (E)';b.onclick=()=>show('');p.appendChild(b)}
 // ---- экраны
 const touch='ontouchstart' in window||navigator.maxTouchPoints>0;
-function show(n,k){open=n;if(n=='inv'&&!k)ctype=2;if(n!='inv')retItems();if(n=='pause')save();$('mp').style.display=n=='menu'?'none':'block';['menu','pause','death','inv'].forEach(s=>$(s).classList.toggle('hid',s!=n));if(n=='inv')invUI();
+function show(n,k){open=n;if(n=='inv'&&!k)ctype=2;if(n!='inv')retItems();if(n=='pause')save();$('mp').style.display=n=='menu'||n=='mpm'?'none':'block';['menu','pause','death','inv','mpm'].forEach(s=>$(s).classList.toggle('hid',s!=n));if(n=='inv')invUI();
 if(n==''&&!touch)$('g').requestPointerLock();if(n!=''&&!touch&&document.pointerLockElement)document.exitPointerLock();
 $('st').style.display=mode=='s'?'flex':'none';$('bf').style.display=$('bd').style.display=mode=='c'?'flex':'none'}
 function mm(){$('b3').textContent='Дальность: '+RDN[RDV.indexOf(rd)];$('p2').textContent='Режим: '+(mode=='s'?'Выживание':'Творчество')}
-function start(m,d){mode=d?d.m:m;SO=d?d.so:Math.floor(Math.random()*1e4);$('mb').classList.add('hid');$('help').textContent='Генерация мира...';
+function start(m,d){mode=d?d.m:m;SO=d?d.so:(MP.seed!=null?MP.seed:Math.floor(Math.random()*1e4));$('mb').classList.add('hid');$('help').textContent='Генерация мира...';
 setTimeout(()=>{gen();ED=d?d.ed:{};FU=d&&d.fu||{};CH=d&&d.ch||{};AR=d&&d.ar||[null,null,null,null];LT=[];for(const k in ED){const kk=+k,v0=ED[k],ci=kk%(W*W),yy=Math.floor(kk/(W*W));world[k]=v0;if(v0&&yy>ht[ci])ht[ci]=yy;if(v0==67||v0==70)LT.push([kk%W,yy,Math.floor(kk/W)%W])}ms.forEach(q=>q&&(scene.remove(q),q.geometry.dispose()));ms.length=0;spawn();P.yaw=P.pitch=0;inv=Array(36).fill(null);sel=0;held=null;hp=food=20;tod=.05;tm={h:0,r:0};
-if(d){P.x=d.x;P.y=d.y+.2;P.z=d.z;P.yaw=d.yw;inv=d.inv;sel=d.sel;hp=d.hp;food=d.food;tod=d.tod}else if(mode=='c')[3,2,1,4,7,9,6,5,8].forEach((id,i)=>inv[i]={id,n:1});spawnAn();applyRD();stream(999);ui();$('mb').classList.remove('hid');mm();show('')},40)}
+if(d){P.x=d.x;P.y=d.y+.2;P.z=d.z;P.yaw=d.yw;inv=d.inv;sel=d.sel;hp=d.hp;food=d.food;tod=d.tod}else if(mode=='c')[3,2,1,4,7,9,6,5,8].forEach((id,i)=>inv[i]={id,n:1});spawnAn();applyRD();stream(999);ui();$('mb').classList.remove('hid');mm();show('');if(MP.on)mpReady()},40)}
 function applyRD(){cam.far=rd*16+24;cam.updateProjectionMatrix()}
 $('b1').onclick=()=>start('s');$('b2').onclick=()=>start('c');
-function save(){if(open=='menu'||!inv||hp<=0)return;try{localStorage.setItem('mc2',JSON.stringify({m:mode,so:SO,x:P.x,y:P.y,z:P.z,yw:P.yaw,hp,food,tod,inv,sel,ed:ED,fu:FU,ch:CH,ar:AR}))}catch(e){}}
+function save(){if(MP.on||open=='menu'||!inv||hp<=0)return;try{localStorage.setItem('mc2',JSON.stringify({m:mode,so:SO,x:P.x,y:P.y,z:P.z,yw:P.yaw,hp,food,tod,inv,sel,ed:ED,fu:FU,ch:CH,ar:AR}))}catch(e){}}
 try{if(localStorage.getItem('mc2'))$('b0').classList.remove('hid')}catch(e){}
 $('b0').onclick=()=>{try{start(0,JSON.parse(localStorage.getItem('mc2')))}catch(e){}};
 setInterval(save,60000);document.addEventListener('visibilitychange',save);
 $('b3').onclick=()=>{rd=RDV[(RDV.indexOf(rd)+1)%4];mm()};
-$('p1').onclick=()=>show('');$('p3').onclick=()=>{save();$('help').innerHTML=HELP;$('b0').classList.remove('hid');show('menu')};
+$('p1').onclick=()=>show('');$('p3').onclick=()=>{save();mpLeave();$('help').innerHTML=HELP;$('b0').classList.remove('hid');show('menu')};
 $('p2').onclick=()=>{mode=mode=='s'?'c':'s';P.fly=0;if(mode=='c'&&!inv.slice(0,9).some(x=>x))[3,2,1,4,7,9,6,5,8].forEach((id,i)=>inv[i]={id,n:1});mm();ui();show('pause')};
 $('d1').onclick=()=>{hp=food=20;spawn();ui();show('')};
 const HELP=touch?'Джойстик — ходить, свайп — камера<br>⛏ держи чтобы ломать, ▣ ставить/есть, 🎒 инвентарь':'WASD — ходить, Пробел — прыжок, Shift — бег, E — инвентарь, Q — вид от 3 лица<br>ЛКМ — ломать, ПКМ — ставить/есть, 1–9 — слот, F3 — отладка<br>Творчество: двойной Пробел — полёт';
@@ -266,7 +276,7 @@ bx(q.bw,q.bh,q.bl,q.c,0,q.lh+q.bh/2,0);bx(q.hs,q.hs,q.hs,t==2?0x5a5a5a:q.c,0,q.l
 if(t==0)bx(.2,.14,.08,0xd07a7a,0,q.lh+q.bh*.7,q.bl/2+q.hs*.9);if(t==3)bx(.08,.06,.1,0xffa500,0,q.lh+q.bh*.7,q.bl/2+q.hs*.9);if(t==1){bx(.3,.25,.4,0xffffff,0,q.lh+q.bh+.01,.1);bx(.06,.1,.06,0xdddddd,.2,q.lh+q.bh*1.1,q.bl/2+.1);bx(.06,.1,.06,0xdddddd,-.2,q.lh+q.bh*1.1,q.bl/2+.1)}
 const legs=[],lc=[0xe08080,0x3a2616,0x5a5a5a,0xffaa00][t];for(let i=0;i<4;i++){const lg=new THREE.Mesh(new THREE.BoxGeometry(.14,q.lh,.14).translate(0,-q.lh/2,0),amat(lc));lg.position.set((i%2?1:-1)*q.bw*.32,q.lh,(i<2?1:-1)*q.bl*.32);g.add(lg);legs.push(lg)}
 g.position.set(x,y,z);scene.add(g);AN.push({t,x,y,z,vx:0,vy:0,vz:0,yaw:Math.random()*6.28,tm:0,mv:0,fl:0,kx:0,kz:0,hp:q.hp,g,legs,w:q.bw/2,h:q.lh+q.bh+.3,ph:0,g0:0})}
-function spawnAn(){AN.forEach(a=>scene.remove(a.g));AN.length=0;for(let i=0,n=0;i<900&&n<40;i++){const nr=n<14,x=Math.floor(nr?P.x+(Math.random()-.5)*50:6+Math.random()*(W-12)),z=Math.floor(nr?P.z+(Math.random()-.5)*50:6+Math.random()*(W-12));if(x<4||z<4||x>=W-4||z>=W-4)continue;const h=hm[z*W+x];if(h>SEA+1&&get(x,h,z)==1&&!get(x,h+1,z)){mkAn(n%4,x+.5,h+1.01,z+.5);n++}}}
+function spawnAn(){AN.forEach(a=>scene.remove(a.g));AN.length=0;for(let i=0,n=0;i<900&&n<(MP.on?0:40);i++){const nr=n<14,x=Math.floor(nr?P.x+(Math.random()-.5)*50:6+Math.random()*(W-12)),z=Math.floor(nr?P.z+(Math.random()-.5)*50:6+Math.random()*(W-12));if(x<4||z<4||x>=W-4||z>=W-4)continue;const h=hm[z*W+x];if(h>SEA+1&&get(x,h,z)==1&&!get(x,h+1,z)){mkAn(n%4,x+.5,h+1.01,z+.5);n++}}}
 function anUpd(dt){for(const a of AN){const dx=a.x-P.x,dz=a.z-P.z,d2=dx*dx+dz*dz;a.g.visible=d2<2500;if(d2>6400)continue;
 a.tm-=dt;if(a.tm<=0){a.tm=2+Math.random()*4;a.mv=Math.random()<.6;a.yaw=Math.random()*6.28}
 a.fl-=dt;const sp=a.fl>0?3:a.mv?.9:0,k=Math.pow(.02,dt);a.kx*=k;a.kz*=k;
@@ -305,7 +315,7 @@ function rayL(){dirv();let pv=null;for(let t=0;t<5;t+=.04){const x=Math.floor(EO
 function bucket(s){const r=rayL();if(!r)return;
 if(s.id==100){if(r.b==10||r.b==68){set(...r.h,0);const f=r.b==10?101:102;if(mode=='s'){s.n--;if(!s.n)inv[sel]=null;add(f)}else inv[sel]={id:f,n:1};ui()}return}
 if(!r.p)return;set(...r.p,s.id==101?10:68);if(mode=='s'){inv[sel]={id:100,n:1};ui()}}
-function set(x,y,z,id){if(y<1||y>=H||x<0||z<0||x>=W||z>=W)return;const k=idx(x,y,z),old=world[k];world[k]=id;ED[k]=id;if(id&&y>ht[z*W+x])ht[z*W+x]=y;
+function set(x,y,z,id){if(y<1||y>=H||x<0||z<0||x>=W||z>=W)return;const k=idx(x,y,z),old=world[k];world[k]=id;ED[k]=id;if(MP.on&&!MP.rm)mpB(x,y,z,id);if(id&&y>ht[z*W+x])ht[z*W+x]=y;
 const L=q=>q==67||q==70,ch=L(old)||L(id);if(ch){LT=LT.filter(p=>!(p[0]==x&&p[1]==y&&p[2]==z));if(L(id))LT.push([x,y,z])}
 const r=ch?9:1;for(let a=Math.max(0,(x-r)>>4);a<=Math.min(NC-1,(x+r)>>4);a++)for(let b=Math.max(0,(z-r)>>4);b<=Math.min(NC-1,(z+r)>>4);b++)build(a,b)}
 function build(cx,cz){const pos=[],uv=[],col=[],ind=[],lt=[];let v=0,ym=0;const x0=cx*CS,z0=cz*CS;
@@ -367,20 +377,100 @@ const DEF=[[2,3,2],[6,8,5],[5,6,3],[2,3,1]];
 function armorRed(n){let d=0;AR.forEach((s,k)=>{if(s)d+=DEF[k][(s.id-110)>>2]});if(!d)return n;const r=Math.max(1,Math.round(n*(1-Math.min(20,d)/25)));AR.forEach((s,k)=>{if(s){s.d=(s.d||0)+1;if(s.d>=DU[s.id])AR[k]=null}});return r}
 function equipA(i){const s=inv[i],k=(s.id-110)%4,o=AR[k];AR[k]=s;inv[i]=o;ui();popTip(NM[s.id]+' надет')}
 function tellInfo(id){if(id==140){const a=((-P.yaw*180/Math.PI)%360+360)%360;popTip(`x ${P.x|0}  y ${P.y|0}  z ${P.z|0} · ${['С','СВ','В','ЮВ','Ю','ЮЗ','З','СЗ'][Math.round(a/45)%8]}`)}else{const h=(tod*24+6)%24;popTip(`${String(h|0).padStart(2,'0')}:${String((h%1)*60|0).padStart(2,'0')}`)}}
-function ignite(h){set(...h,0);popTip('Бабах через 2 сек!');setTimeout(()=>boom(h[0]+.5,h[1]+.5,h[2]+.5),2000)}
+function ignite(h){set(...h,0);if(MP.on)MP.room.emit('tnt',{x:h[0],y:h[1],z:h[2]}).catch(()=>{});popTip('Бабах через 2 сек!');setTimeout(()=>boom(h[0]+.5,h[1]+.5,h[2]+.5),2000)}
 function boom(cx,cy,cz){const Rr=3,ch=new Set(),tn=[];
 for(let dx=-Rr;dx<=Rr;dx++)for(let dy=-Rr;dy<=Rr;dy++)for(let dz=-Rr;dz<=Rr;dz++){if(dx*dx+dy*dy+dz*dz>Rr*Rr+1)continue;const x=Math.floor(cx)+dx,y=Math.floor(cy)+dy,z=Math.floor(cz)+dz;if(y<1||y>=H||x<1||z<1||x>=W-1||z>=W-1)continue;const k=idx(x,y,z),b=world[k];if(!b||b==11)continue;if(b==71)tn.push([x,y,z]);world[k]=0;ED[k]=0;ch.add((z>>4)*NC+(x>>4))}
 ch.forEach(i=>build(i%NC,(i/NC)|0));LT=LT.filter(p=>world[idx(p[0],p[1],p[2])]);
 const d=Math.hypot(P.x-cx,P.y+1-cy,P.z-cz);if(d<6)hurt(Math.ceil((6-d)*3));
 for(const a of [...AN]){const dx=a.x-cx,dz=a.z-cz,dd=Math.hypot(dx,dz);if(dd<7){a.kx=dx/(dd||1)*8;a.kz=dz/(dd||1)*8;a.vy=6;a.hp-=8;if(a.hp<=0){scene.remove(a.g);AN.splice(AN.indexOf(a),1)}}}
 $('fl').style.opacity=1;setTimeout(()=>$('fl').style.opacity=0,200);tn.forEach(t=>setTimeout(()=>boom(t[0]+.5,t[1]+.5,t[2]+.5),300))}
+// ---- мультиплеер: прямое соединение WebRTC (PeerJS)
+const MP={on:false,seed:null,rm:false,room:null,nick:'Игрок',col:0,pt:0,lq:'',synced:false,hadPeers:false},RP={},PAL=[0xd9534f,0x5cb85c,0x428bca,0xf0ad4e,0x9b59b6,0x1abc9c,0xe91e63,0xff9800];
+let chatOn=0;
+const mpStatus=t=>{$('mps').textContent=t};
+function mpNet(code){return new Promise((res,rej)=>{
+if(!window.Peer){rej('Не загрузилась библиотека PeerJS. Проверь интернет и открой игру заново.');return}
+code=String(code||'').toLowerCase().replace(/[^a-z0-9]/g,'');if(!code){rej('Введи код мира (a-z, 0-9).');return}
+const hostId='mcw-'+code,L={on:{},pl:[],conn:null,rid:null,rp:{},peer:null,myid:'',host:false,done:false,onconn:null};let pres={},tm=null;
+const fail=m=>{if(L.done)return;L.done=true;clearTimeout(tm);try{L.peer&&L.peer.destroy()}catch(e){}rej(m)};
+const finish=()=>{if(L.done)return;L.done=true;clearTimeout(tm);res(room)};
+const fire=()=>L.pl.forEach(f=>{try{f({peers:room.peers(),joined:[],left:[],updated:[]})}catch(e){}});
+const send=m=>{try{if(L.conn&&L.conn.open)L.conn.send(m)}catch(e){}return Promise.resolve()};
+const room={isHost:()=>L.host,
+peers(){const a=[{peer:L.myid,isMe:true,sameTab:true,kind:'viewer',presence:pres}];if(L.conn&&L.conn.open&&L.rid)a.push({peer:L.rid,isMe:false,sameTab:false,kind:'viewer',presence:L.rp});return a},
+on(t,f){(L.on[t]=L.on[t]||[]).push(f)},onPeers(f){L.pl.push(f)},
+emit(t,d){return send({t:'e',k:t,d})},presence(p){Object.assign(pres,p);return send({t:'p',p:pres})},
+leave(){L.pl=[];L.on={};try{L.conn&&L.conn.close()}catch(e){}try{L.peer&&L.peer.destroy()}catch(e){}L.conn=null}};
+const hook=c=>{if(L.conn){c.on('open',()=>c.close());return}
+L.conn=c;L.rid=c.peer;L.rp={};
+c.on('open',()=>{try{c.send({t:'p',p:pres})}catch(e){}fire();if(L.onconn)L.onconn()});
+c.on('data',m=>{if(!m||typeof m!=='object')return;
+if(m.t==='p'&&m.p&&typeof m.p==='object'){L.rp=m.p;fire()}
+else if(m.t==='e'&&typeof m.k==='string'){(L.on[m.k]||[]).slice().forEach(f=>{try{f({topic:m.k,data:m.d,peer:c.peer,isMe:false,sameTab:false,kind:'viewer'})}catch(e){}})}});
+c.on('close',()=>{if(L.conn===c){L.conn=null;L.rid=null;L.rp={};fire();if(L.done&&typeof chatAdd=='function')chatAdd('← друг вышел')}});
+c.on('error',()=>{})};
+const asJoin=()=>{const p=new Peer();L.peer=p;
+p.on('open',id=>{L.myid=id;L.onconn=finish;hook(p.connect(hostId,{reliable:true}))});
+p.on('error',e=>fail(e.type==='peer-unavailable'?'Игры с таким кодом нет. Пусть друг сначала войдёт с этим кодом.':'Ошибка сети: '+(e.type||e)))};
+tm=setTimeout(()=>fail('Не удалось соединиться за 20 секунд. Проверь интернет и код.'),20000);
+const p=new Peer(hostId);L.peer=p;
+p.on('open',id=>{L.myid=id;L.host=true;finish()});
+p.on('connection',hook);
+p.on('disconnected',()=>{if(L.host&&!p.destroyed)try{p.reconnect()}catch(e){}});
+p.on('error',e=>{if(e.type==='unavailable-id'&&!L.host){try{p.destroy()}catch(x){}asJoin()}else if(!L.done)fail('Ошибка сети: '+(e.type||e))})
+})}
+async function mpJoin(code,nick,m){$('mpa').disabled=$('mpb').disabled=true;mpStatus('Подключение...');let room=null;
+let err='';try{room=await mpNet(code)}catch(e){err=String(e&&e.message||e)}
+if(!room){mpStatus(err||'Не удалось подключиться.');$('mpa').disabled=$('mpb').disabled=false;return}
+MP.room=room;MP.nick=nick||'Игрок';MP.col=Math.floor(Math.random()*PAL.length);mpStatus('Ищу других игроков...');
+{const t0=Date.now();while(Date.now()-t0<(room.isHost()?600:6000)){if(room.peers().some(p=>!p.isMe&&p.presence&&Number.isFinite(p.presence.s)))break;await new Promise(r=>setTimeout(r,150))}}
+const o=room.peers().filter(p=>!p.isMe&&p.kind=='viewer'&&p.presence&&Number.isFinite(p.presence.s));
+MP.hadPeers=o.length>0;MP.seed=o.length?o[0].presence.s:Math.floor(Math.random()*1e4);MP.synced=false;MP.on=true;mpSetup(room);start(m)}
+function mpSetup(room){
+room.on('b',m=>{if(m.isMe)return;const d=m.data;if(!d||!Number.isInteger(d.x)||!Number.isInteger(d.y)||!Number.isInteger(d.z)||!Number.isInteger(d.i)||(d.i&&!B[d.i]))return;MP.rm=true;try{set(d.x,d.y,d.z,d.i)}finally{MP.rm=false}});
+room.on('tnt',m=>{if(m.isMe)return;const d=m.data;if(d&&Number.isFinite(d.x+d.y+d.z))setTimeout(()=>boom(d.x+.5,d.y+.5,d.z+.5),2000)});
+room.on('chat',m=>{if(m.isMe)return;const d=m.data||{};chatAdd(String(d.n||'?').slice(0,12)+': '+String(d.t||'').slice(0,100))});
+room.on('need',m=>{if(m.isMe||!MP.on)return;const me=room.peers().find(p=>p.isMe&&p.sameTab);if(!me)return;const c=room.peers().filter(p=>p.kind=='viewer'&&p.peer!=m.peer).map(p=>p.peer).sort();if(c[0]===me.peer)sendSync()});
+room.on('sync',m=>{if(!m.isMe)applySync(m.data)});
+room.onPeers(()=>mpPeers())}
+function mpReady(){const r=MP.room;r.presence({s:SO,n:MP.nick,c:MP.col,x:+P.x.toFixed(2),y:+P.y.toFixed(2),z:+P.z.toFixed(2),yw:0}).catch(()=>{});$('bch').classList.remove('hid');
+chatAdd(r.isHost()?'Ты хост. Жду друга с кодом мира. Чат: '+(touch?'кнопка 💬':'клавиша T'):'Подключено к другу. Чат: '+(touch?'кнопка 💬':'клавиша T'));
+if(MP.hadPeers){r.emit('need',{}).catch(()=>{});setTimeout(()=>{if(MP.on&&!MP.synced&&r.peers().length>1)r.emit('need',{}).catch(()=>{})},3500)}}
+function mpB(x,y,z,id){MP.room.emit('b',{x,y,z,i:id}).catch(()=>{})}
+function sendSync(){const es=Object.entries(ED).flatMap(([k,v])=>[+k,v]),n=760,tot=Math.max(1,Math.ceil(es.length/n));let i=0;const t=setInterval(()=>{if(!MP.on||i>=tot){clearInterval(t);return}MP.room.emit('sync',{i,t:tot,a:es.slice(i*n,(i+1)*n)}).catch(()=>{});i++},250)}
+function applySync(d){if(!d||!Array.isArray(d.a))return;MP.synced=true;const dirty=new Set();
+for(let j=0;j+1<d.a.length;j+=2){const k=d.a[j],v=d.a[j+1];if(!Number.isInteger(k)||!Number.isInteger(v)||k<0||k>=W*H*W||v<0||(v&&!B[v]))continue;world[k]=v;ED[k]=v;const ci=k%(W*W),y=Math.floor(k/(W*W)),x=k%W,z=Math.floor(k/W)%W;if(v&&y>ht[ci])ht[ci]=y;if(v==67||v==70)LT.push([x,y,z]);
+const cx=x>>4,cz=z>>4;dirty.add(cz*NC+cx);if(x%CS==0&&cx>0)dirty.add(cz*NC+cx-1);if(x%CS==CS-1&&cx<NC-1)dirty.add(cz*NC+cx+1);if(z%CS==0&&cz>0)dirty.add((cz-1)*NC+cx);if(z%CS==CS-1&&cz<NC-1)dirty.add((cz+1)*NC+cx)}
+dirty.forEach(i=>{if(ms[i])build(i%NC,(i/NC)|0)})}
+function mkModel(c){const g=new THREE.Group(),legs=[],bx=(w,h,l,col,x,y,z,pv)=>{const geo=new THREE.BoxGeometry(w,h,l);if(pv)geo.translate(0,-h/2,0);const m=new THREE.Mesh(geo,amat(col));m.position.set(x,y,z);g.add(m);return m};
+bx(.5,.75,.25,c,0,1.125,0);bx(.5,.5,.5,0xc8967a,0,1.625,0);bx(.52,.14,.52,0x3a2a1a,0,1.93,0);bx(.1,.08,.02,0x2244aa,-.12,1.65,-.26);bx(.1,.08,.02,0x2244aa,.12,1.65,-.26);
+legs.push(bx(.25,.75,.25,0x3b3b8c,-.125,.75,0,1),bx(.25,.75,.25,0x3b3b8c,.125,.75,0,1),bx(.25,.75,.25,0xc8967a,-.375,1.5,0,1),bx(.25,.75,.25,0xc8967a,.375,1.5,0,1));return{g,legs}}
+function tag(text){const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.font='bold 30px sans-serif';x.textAlign='center';x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,8,256,48);x.fillStyle='#fff';x.fillText(text,128,43);
+const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false,fog:false}));s.scale.set(2,.5,1);s.position.y=2.4;s.renderOrder=999;return s}
+function mpPeers(){if(!MP.on||!MP.room)return;const seen={};
+for(const p of MP.room.peers()){if(p.isMe||p.kind!='viewer')continue;const q=p.presence;if(!q||!Number.isFinite(q.x+q.y+q.z))continue;seen[p.peer]=1;let r=RP[p.peer];
+if(!r){const nm=String(q.n||'Игрок').slice(0,12),m=mkModel(PAL[(q.c|0)%PAL.length&7]);m.g.add(tag(nm));scene.add(m.g);r=RP[p.peer]={g:m.g,legs:m.legs,x:q.x,y:q.y,z:q.z,yw:+q.yw||0,ph:0,sp:0,tx:q.x,ty:q.y,tz:q.z,tyw:+q.yw||0};chatAdd('→ '+nm+' вошёл в игру')}
+r.tx=q.x;r.ty=q.y;r.tz=q.z;r.tyw=+q.yw||0}
+for(const id in RP)if(!seen[id]){scene.remove(RP[id].g);delete RP[id]}}
+function mpUpd(dt){MP.pt+=dt;if(MP.pt>.1){MP.pt=0;const q=[P.x,P.y,P.z,P.yaw].map(v=>v.toFixed(2)).join();if(q!==MP.lq){MP.lq=q;MP.room.presence({x:+P.x.toFixed(2),y:+P.y.toFixed(2),z:+P.z.toFixed(2),yw:+P.yaw.toFixed(2)}).catch(()=>{})}}
+const k=Math.min(1,dt*10);for(const id in RP){const r=RP[id],dx=r.tx-r.x,dz=r.tz-r.z;r.sp=Math.hypot(dx,dz)*10;r.x+=dx*k;r.y+=(r.ty-r.y)*k;r.z+=dz*k;let dy=r.tyw-r.yw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));r.yw+=dy*k;
+r.g.position.set(r.x,r.y,r.z);r.g.rotation.y=r.yw;r.ph+=dt*Math.min(r.sp,6)*2.2;const w=r.sp>.3?Math.sin(r.ph)*.7:0;r.legs[0].rotation.x=w;r.legs[1].rotation.x=-w;r.legs[2].rotation.x=-w;r.legs[3].rotation.x=w;r.g.visible=(r.x-P.x)**2+(r.z-P.z)**2<6400}}
+function mpLeave(){if(!MP.on&&!MP.room)return;MP.on=false;MP.seed=null;for(const id in RP){scene.remove(RP[id].g);delete RP[id]}try{MP.room&&MP.room.leave()}catch(e){}MP.room=null;$('bch').classList.add('hid');$('mpa').disabled=$('mpb').disabled=false;closeChat();$('cl').innerHTML=''}
+function chatAdd(t){const d=document.createElement('div');d.textContent=t;$('cl').appendChild(d);while($('cl').children.length>6)$('cl').removeChild($('cl').firstChild);setTimeout(()=>d.remove&&d.remove(),12000)}
+function openChat(){if(!MP.on)return;$('cb').classList.remove('hid');chatOn=1;setTimeout(()=>$('ci').focus(),0)}
+function closeChat(){$('cb').classList.add('hid');chatOn=0;$('ci').blur()}
+function sendChat(){const t=$('ci').value.trim().slice(0,100);$('ci').value='';closeChat();if(!t||!MP.on)return;MP.room.emit('chat',{n:MP.nick,t}).catch(()=>{});chatAdd(MP.nick+': '+t)}
+$('b4').onclick=()=>{$('mpc').value=$('mpc').value||Math.random().toString(36).slice(2,6);$('mpn').value=$('mpn').value||'Игрок'+((Math.random()*90+10)|0);mpStatus('Первый вводит код и входит, друг вводит тот же код. Нужен интернет у обоих.');show('mpm')};
+$('mpx').onclick=()=>show('menu');
+const mpGo=m=>{const c=$('mpc').value.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12);if(c.length<3){mpStatus('Код: минимум 3 символа (a-z, 0-9)');return}mpJoin(c,$('mpn').value.trim().slice(0,12),m)};
+$('mpa').onclick=()=>mpGo('c');$('mpb').onclick=()=>mpGo('s');$('cs').onclick=sendChat;
 // ---- управление
 const K={},J={x:0,y:0};
 document.addEventListener('pointerlockchange',()=>{if(!touch&&document.pointerLockElement!=$('g')&&open=='')show('pause')});
 const lk=()=>document.pointerLockElement==$('g');
-addEventListener('keydown',e=>{K[e.code]=1;if(open=='')if(e.code>='Digit1'&&e.code<='Digit9'){sel=+e.code[5]-1;ui()}
+addEventListener('keydown',e=>{if(e.target&&e.target.tagName=='INPUT'){if(e.code=='Enter'&&e.target.id=='ci')sendChat();if(e.code=='Escape')closeChat();return}K[e.code]=1;if(open=='')if(e.code>='Digit1'&&e.code<='Digit9'){sel=+e.code[5]-1;ui()}
 if(e.code=='KeyE'){if(open=='')show('inv');else if(open=='inv')show('')}
-if(e.code=='KeyQ'&&open==''){tp=(tp+1)%3;$('ch').style.display=tp==2?'none':'block'}if(e.code=='F3'){e.preventDefault();$('dbg').classList.toggle('hid')}
+if(e.code=='KeyT'&&MP.on&&open==''){e.preventDefault();openChat();return}if(e.code=='KeyQ'&&open==''){tp=(tp+1)%3;$('ch').style.display=tp==2?'none':'block'}if(e.code=='F3'){e.preventDefault();$('dbg').classList.toggle('hid')}
 if(e.code=='Space'&&mode=='c'&&open==''){const n=performance.now();if(n-sp0<300)P.fly=!P.fly;sp0=n}});
 addEventListener('keyup',e=>K[e.code]=0);
 addEventListener('mousemove',e=>{if(!lk())return;P.yaw-=e.movementX*.0024;P.pitch=Math.max(-1.55,Math.min(1.55,P.pitch-e.movementY*.0024))});
@@ -395,14 +485,14 @@ js.addEventListener('touchmove',e=>{for(const t of e.changedTouches)if(t.identif
 const je=e=>{for(const t of e.changedTouches)if(t.identifier==jid){jid=null;J.x=J.y=0;kn.style.left=kn.style.top='40px'}};
 js.addEventListener('touchend',je);js.addEventListener('touchcancel',je);
 const bt=(id,dn,up)=>{const b=$(id);b.addEventListener('touchstart',e=>{e.preventDefault();dn()},{passive:false});b.addEventListener('touchend',e=>{e.preventDefault();up&&up()},{passive:false})};
-bt('bj',()=>K.Space=1,()=>K.Space=0);bt('bd',()=>K.ShiftLeft=1,()=>K.ShiftLeft=0);bt('bb',()=>M0=1,()=>M0=0);bt('bp',use);bt('bf',()=>P.fly=!P.fly);bt('bi',()=>show('inv'));bt('bm',()=>show('pause'));bt('bc',()=>{tp=(tp+1)%3;$('ch').style.display=tp==2?'none':'block'});
+bt('bj',()=>K.Space=1,()=>K.Space=0);bt('bd',()=>K.ShiftLeft=1,()=>K.ShiftLeft=0);bt('bb',()=>M0=1,()=>M0=0);bt('bp',use);bt('bf',()=>P.fly=!P.fly);bt('bi',()=>show('inv'));bt('bm',()=>show('pause'));bt('bc',()=>{tp=(tp+1)%3;$('ch').style.display=tp==2?'none':'block'});bt('bch',()=>openChat());
 let lid=null,lx=0,ly=0;const cv=$('g');
 cv.addEventListener('touchstart',e=>{e.preventDefault();if(lid===null){const t=e.changedTouches[0];lid=t.identifier;lx=t.clientX;ly=t.clientY}},{passive:false});
 cv.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.changedTouches)if(t.identifier==lid){P.yaw-=(t.clientX-lx)*.006;P.pitch=Math.max(-1.55,Math.min(1.55,P.pitch-(t.clientY-ly)*.006));lx=t.clientX;ly=t.clientY}},{passive:false});
 const le=e=>{for(const t of e.changedTouches)if(t.identifier==lid)lid=null};cv.addEventListener('touchend',le);cv.addEventListener('touchcancel',le)}
 // ---- цикл
 let last=performance.now(),dt2=0,fps=0;
-function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1e3,.05);last=now;if(open=='menu')return;fuUpd(dt);fuT+=dt;if(open=='inv'&&ctype==4&&fuT>.5){fuT=0;invUI()}
+function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1e3,.05);last=now;if(open=='menu')return;fuUpd(dt);if(MP.on)mpUpd(dt);fuT+=dt;if(open=='inv'&&ctype==4&&fuT>.5){fuT=0;invUI()}
 const fx=Math.floor(P.x),fz=Math.floor(P.z);
 if(open==''){
 let f=(K.KeyW?1:0)-(K.KeyS?1:0)-J.y,s=(K.KeyD?1:0)-(K.KeyA?1:0)+J.x;const l=Math.hypot(f,s);if(l>1){f/=l;s/=l}
